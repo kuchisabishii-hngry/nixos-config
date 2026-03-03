@@ -60,10 +60,25 @@ in
   };
 
   programs.niri.enable = true;
+  programs.xwayland.enable = true;
+  services.flatpak.enable = true;
   services.gvfs.enable = true;
   services.pipewire = {
     enable = true;
     pulse.enable = true;
+  };
+
+  # Automatically add Flathub remote system activation
+  system.activationScripts.flatpakRemote = {
+    text = ''
+      if ${pkgs.flatpak}/bin/flatpak remote-list --system | grep -q "flathub"; then
+        echo "Flathub remote already exists, skipping."
+      else
+        ${pkgs.flatpak}/bin/flatpak remote-add --system --if-not-exists flathub \
+          https://dl.flathub.org/repo/flathub.flatpakrepo
+      fi
+    '';
+    deps = [];
   };
 
   # ZRAM and SWAP
@@ -117,6 +132,7 @@ in
     onlyoffice-desktopeditors
     kdePackages.dolphin
     kdePackages.ark
+    xwayland-satellite
   ];
 
   # System-wide Ark default (all users)
