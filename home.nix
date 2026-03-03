@@ -3,9 +3,9 @@
 {
   home.username = "otakuracer";
   home.homeDirectory = "/home/otakuracer";
-  
-  # Set this to the version you first installed. 
-  home.stateVersion = "25.11"; 
+
+  # Set this to the version you first installed.
+  home.stateVersion = "25.11";
 
   programs.home-manager.enable = true;
 
@@ -20,6 +20,8 @@
     enable = true;
     shellAliases = {
       swtch = "sudo nixos-rebuild switch";
+      conf = "vim ~/nixos-config/configuration.nix";
+      home = "vim ~/nixos-config/home.nix";
       nix-gc = "sudo nix-collect-garbage -d";
       nix-list = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system";
     };
@@ -38,4 +40,21 @@
     EDITOR = "vim";
     TERMINAL = "ghostty";
   };
+
+  # User-specific Ark default (optional)
+  xdg.configFile."mimeapps.list".text = ''
+    [Default Applications]
+    application/zip=org.kde.ark.desktop
+    application/x-tar=org.kde.ark.desktop
+    application/x-bzip2=org.kde.ark.desktop
+    application/x-gzip=org.kde.ark.desktop
+    application/x-7z-compressed=org.kde.ark.desktop
+    application/x-xz=org.kde.ark.desktop
+    application/x-rar=org.kde.ark.desktop
+    application/x-arj=org.kde.ark.desktop
+    application/x-cab=org.kde.ark.desktop
+    application/x-lzip=org.kde.ark.desktop
+    application/x-iso9660-image=org.kde.ark.desktop
+    application/x-rpm=org.kde.ark.desktop
+  '';
 }
