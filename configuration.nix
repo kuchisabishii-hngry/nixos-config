@@ -1,12 +1,8 @@
 { config, pkgs, ... }:
 
-let
-  home-manager = builtins.fetchTarball "https://github.com/nix-community/home-manager/archive/release-25.11.tar.gz";
-in
 {
   imports = [
     ./hardware-configuration.nix
-    (import "${home-manager}/nixos")
   ];
 
   home-manager = {
@@ -23,6 +19,8 @@ in
   networking.hostName = "nixos-x450jf";
   networking.networkmanager.enable = true;
   time.timeZone = "Asia/Jakarta";
+
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # GPU Force Intel - blacklist Nvidia
   services.thermald.enable = true;
@@ -62,6 +60,8 @@ in
   programs.niri.enable = true;
   programs.xwayland.enable = true;
   services.flatpak.enable = true;
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.login.enableGnomeKeyring = true;
   services.gvfs.enable = true;
   services.pipewire = {
     enable = true;
@@ -124,6 +124,7 @@ in
     rofi
     pavucontrol
     btop
+    libsecret
     feishin
     featherpad
     glmark2

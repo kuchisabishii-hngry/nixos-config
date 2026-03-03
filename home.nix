@@ -20,6 +20,7 @@
     enable = true;
     shellAliases = {
       swtch = "sudo nixos-rebuild switch";
+      swfl = "sudo nixos-rebuild switch --flake /home/otakuracer/nixos-config#nixos-x450jf";
       conf = "vim ~/nixos-config/configuration.nix";
       home = "vim ~/nixos-config/home.nix";
       nix-gc = "sudo nix-collect-garbage -d";
@@ -29,8 +30,8 @@
 
   programs.git = {
     enable = true;
-    userName  = "otakuracer";
-    userEmail = "aditmadjid@gmail.com";
+    settings.user.name  = "otakuracer";
+    settings.user.email = "aditmadjid@gmail.com";
   };
 
   home.sessionVariables = {
