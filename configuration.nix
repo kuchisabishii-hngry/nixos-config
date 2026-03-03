@@ -24,27 +24,33 @@ in
     time.timeZone = "Asia/Jakarta";
 
     #GPU Force Intel - blacklist Nvidia
-    services.xserver.videoDrivers = [ "modesetting" ];
+    #services.xserver.videoDrivers = [ "modesetting" ];
+    services.thermald.enable = true;
+    services.xserver.enable = false;
     boot.blacklistedKernelModules = [ "nouveau" "nvidia" "nvidia_drm" "nvidia_modeset" ];
     boot.kernelParams = [ "module_blacklist=nouveau,nvidia" "video=eDp-1:d" ];
 
     hardware.graphics = {
         enable = true;
         extraPackages = with pkgs; [
-        intel-media-driver
+        intel-vaapi-driver
         libvdpau-va-gl
-        ];
+      ];
+    };
+
+    environment.sessionVariables = {
+      LIBVA_DRIVER_NAME = "i965";
     };
 
     #TUI Login
     services.greetd = {
-        enable = true;
-        settings = {
-            default_session = {
-                command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd niri";
-                user = "greeter";
-            };
+      enable = true;
+      settings = {
+        default_session = {
+          command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --cmd niri";
+          user = "greeter";
         };
+      };
     };
 
     #Essential for Wayland Portals (used by niri)
@@ -61,10 +67,16 @@ in
         pulse.enable = true;
     };
 
-    #ZRAM
-    zramSwap.enable = true;
+    #ZRAM n SWAP
+    zramSwap = {
+      enable = true;
+      memoryPercent = 25;
+    };
+    swapDevices = [
+      { device = "/swapfile"; }
+    ];
 
-    boot.kernel.sysctl = { "vm.swappiness" = 100; };
+    boot.kernel.sysctl = { "vm.swappiness" = 60; };
 
     programs.nix-ld.enable = true;
     users.users.otakuracer = {
@@ -102,6 +114,8 @@ in
     glmark2
     greetd
     ghostty
+    onlyoffice-desktopeditors
+    peazip
     ];
 
     system.stateVersion = "25.11";
