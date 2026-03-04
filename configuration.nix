@@ -18,6 +18,9 @@
   boot.loader.efi.canTouchEfiVariables = true;
   networking.hostName = "nixos-x450jf";
   networking.networkmanager.enable = true;
+  hardware.bluetooth.enable = true;
+  services.power-profiles-daemon.enable = true;
+  services.upower.enable = true;
   time.timeZone = "Asia/Jakarta";
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
@@ -118,9 +121,9 @@
         set mouse=a
       '';
     })
+    alacritty
     git
     firefox
-    waybar
     rofi
     pavucontrol
     btop
@@ -134,6 +137,12 @@
     kdePackages.dolphin
     kdePackages.ark
     xwayland-satellite
+    wlr-randr
+   # waybar
+ ];
+
+  fonts.packages = with pkgs; [
+    jetbrains-mono
   ];
 
   # System-wide Ark default (all users)
