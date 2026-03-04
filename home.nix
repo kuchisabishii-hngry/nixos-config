@@ -25,6 +25,8 @@
       home = "vim ~/nixos-config/home.nix";
       nix-gc = "sudo nix-collect-garbage -d";
       nix-list = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system";
+      gcom = "git add . && git commit -m \"changes\"";
+      up = "git add . && git commit -m \"changes\" && sudo nixos-rebuild switch --flake ~/nixos-config#nixos-x450jf";
     };
   };
 
