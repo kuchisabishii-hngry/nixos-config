@@ -138,7 +138,7 @@
     kdePackages.ark
     xwayland-satellite
     wlr-randr
-   # waybar
+    waybar
  ];
 
   fonts.packages = with pkgs; [
