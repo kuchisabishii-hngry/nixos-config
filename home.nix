@@ -12,10 +12,7 @@
 
   programs.home-manager.enable = true;
   
-  programs.noctalia-shell = {
-    enable = true;
-    package = lib.mkForce (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default);
-  };
+  programs.noctalia-shell.enable = true;
 
   home.packages = with pkgs; [
     bat
