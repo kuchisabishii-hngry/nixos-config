@@ -138,7 +138,6 @@
     wlr-randr
     wl-clipboard
     waybar
-    quickshell
     nodejs
  ];
 

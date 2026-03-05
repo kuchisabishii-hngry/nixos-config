@@ -14,7 +14,7 @@
     };
   };
 
-  outputs = inputs@{ self, nixpkgs, home-manager, quickshell, noctalia, ... }: {
+  outputs = inputs@{ self, nixpkgs, home-manager, noctalia, ... }: {
     nixosConfigurations.nixos-x450jf = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       specialArgs = { inherit inputs; };
