@@ -4,13 +4,6 @@
   imports = [
     ./hardware-configuration.nix
   ];
-
-  home-manager = {
-    useUserPackages = true;
-    useGlobalPkgs = true;
-    backupFileExtension = "backup";
-    users.otakuracer = import ./home.nix;
-  };
  
   # System Settings
   nixpkgs.config.allowUnfree = true;
