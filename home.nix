@@ -21,6 +21,16 @@
     ghostty
   ];
 
+  home.sessionPath = [ "$HOME/.local/bin" ];
+
+  home.file.".local/bin/noctalia-qs" = {
+  text = ''
+    #!/bin/sh
+    exec ${inputs.noctalia.packages.x86_64-linux.default}/bin/noctalia-shell "$@"
+  '';
+  executable = true;
+};
+
   programs.bash = {
     enable = true;
     shellAliases = {
