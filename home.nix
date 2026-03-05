@@ -19,6 +19,7 @@
     pfetch
     fastfetch
     ghostty
+    nerd-fonts.jetbrains-mono
   ];
 
   home.sessionPath = [ "$HOME/.local/bin" ];

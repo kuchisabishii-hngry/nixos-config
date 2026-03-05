@@ -140,6 +140,7 @@
     wl-clipboard
     waybar
     nodejs
+    wget
  ];
 
   fonts.packages = with pkgs; [
