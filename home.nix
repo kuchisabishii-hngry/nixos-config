@@ -19,6 +19,7 @@
     pfetch
     fastfetch
     ghostty
+    inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.noctalia-qs-wrapped
   ];
 
   programs.bash = {
