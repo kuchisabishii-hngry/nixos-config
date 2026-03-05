@@ -26,7 +26,7 @@
   home.file.".local/bin/noctalia-qs" = {
   text = ''
     #!/bin/sh
-    exec ${inputs.noctalia.packages.x86_64-linux.default}/bin/noctalia-shell "$@"
+    exec /nix/store/$(ls /nix/store | grep noctalia-qs-wrapped | grep -v '\.drv' | head -1)/bin/qs "$@"
   '';
   executable = true;
 };
