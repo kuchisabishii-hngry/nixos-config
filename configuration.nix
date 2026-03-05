@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   imports = [
@@ -11,7 +11,7 @@
     backupFileExtension = "backup";
     users.otakuracer = import ./home.nix;
   };
-
+ 
   # System Settings
   nixpkgs.config.allowUnfree = true;
   boot.loader.systemd-boot.enable = true;
@@ -41,6 +41,8 @@
 
   environment.sessionVariables = {
     LIBVA_DRIVER_NAME = "i965";
+    GTK_THEME = "Adwaita:dark";
+    GTK_APPLICATION_PREFER_DARK_THEME = "1";
   };
 
   # TUI Login
@@ -68,6 +70,8 @@
   services.gvfs.enable = true;
   services.pipewire = {
     enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
     pulse.enable = true;
   };
 
@@ -119,9 +123,11 @@
         set backspace=indent,eol,start
         syntax on
         set mouse=a
+        set clipboard=unnamedplus
       '';
     })
     alacritty
+    clipse
     git
     firefox
     rofi
@@ -131,14 +137,16 @@
     feishin
     featherpad
     glmark2
-    greetd
     ghostty
     onlyoffice-desktopeditors
     kdePackages.dolphin
     kdePackages.ark
     xwayland-satellite
     wlr-randr
+    wl-clipboard
     waybar
+    quickshell
+    nodejs
  ];
 
   fonts.packages = with pkgs; [

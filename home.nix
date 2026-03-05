@@ -1,6 +1,9 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, lib, ... }:
 
 {
+  imports = [
+    inputs.noctalia.homeModules.default
+  ];
   home.username = "otakuracer";
   home.homeDirectory = "/home/otakuracer";
 
@@ -8,6 +11,11 @@
   home.stateVersion = "25.11";
 
   programs.home-manager.enable = true;
+  
+  programs.noctalia-shell = {
+    enable = true;
+    package = lib.mkForce (inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default);
+  };
 
   home.packages = with pkgs; [
     bat
@@ -23,8 +31,10 @@
       swfl = "sudo nixos-rebuild switch --flake /home/otakuracer/nixos-config#nixos-x450jf";
       conf = "vim ~/nixos-config/configuration.nix";
       home = "vim ~/nixos-config/home.nix";
+      flk = "vim ~/nixos-config/flake.nix";
       nix-gc = "sudo nix-collect-garbage -d";
       nix-list = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system";
+      nircon = "vim ~/.config/niri/config.kdl";
     };
   };
 
