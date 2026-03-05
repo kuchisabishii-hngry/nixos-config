@@ -119,6 +119,7 @@
         set clipboard=unnamedplus
       '';
     })
+    inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default
     alacritty
     clipse
     git
