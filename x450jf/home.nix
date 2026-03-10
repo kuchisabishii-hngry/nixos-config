@@ -53,7 +53,7 @@
       rebuild  = "sudo nixos-rebuild switch --flake ~/nixos-config/x450jf#nixos-x450jf";
       conf     = "nvim ~/nixos-config/x450jf/configuration.nix";
       hm       = "nvim ~/nixos-config/x450jf/home.nix";
-      flk      = "nvim ~/nixos-config/flake.nix";
+      flk = "nvim ~/nixos-config/x450jf/flake.nix";
       nircon   = "nvim ~/.config/niri/config.kdl";
       nix-gc   = "sudo nix-collect-garbage -d";
       nix-list = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system";
