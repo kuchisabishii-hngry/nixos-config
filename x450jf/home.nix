@@ -50,9 +50,9 @@
       ll       = "ls -lah --color=auto";
       ".."     = "cd ..";
       "..."    = "cd ../..";
-      rebuild  = "sudo nixos-rebuild switch --flake ~/nixos-config#nixos-x450jf";
-      conf     = "nvim ~/nixos-config/configuration.nix";
-      hm       = "nvim ~/nixos-config/home.nix";
+      rebuild  = "sudo nixos-rebuild switch --flake ~/nixos-config/x450jf#nixos-x450jf";
+      conf     = "nvim ~/nixos-config/x450jf/configuration.nix";
+      hm       = "nvim ~/nixos-config/x450jf/home.nix";
       flk      = "nvim ~/nixos-config/flake.nix";
       nircon   = "nvim ~/.config/niri/config.kdl";
       nix-gc   = "sudo nix-collect-garbage -d";
