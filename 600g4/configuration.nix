@@ -1,0 +1,273 @@
+{ config, pkgs, inputs, lib, ... }:
+
+{
+  imports = [
+    ./hardware-configuration.nix
+  ];
+
+  # ── Nix Settings ────────────────────────────────────────────────────────────
+  nixpkgs.config.allowUnfree = true;
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # ── Bootloader ───────────────────────────────────────────────────────────────
+  boot.loader.limine = {
+    enable = true;
+    maxGenerations = 10;
+  };
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # ── Kernel & ZRAM ────────────────────────────────────────────────────────────
+  zramSwap = {
+    enable = true;
+    memoryPercent = 50;
+  };
+
+  boot.kernel.sysctl = {
+    "vm.swappiness"           = 30;
+    "vm.vfs_cache_pressure"   = 50;
+  };
+
+  # ── Networking ───────────────────────────────────────────────────────────────
+  networking.hostName = "600g4-nixos";
+  networking.networkmanager.enable = true;
+
+  # ── Locale & Time ────────────────────────────────────────────────────────────
+  time.timeZone = "Asia/Jakarta";
+  i18n.defaultLocale = "en_US.UTF-8";
+
+  # ── GPU: Intel UHD 630 (Coffee Lake) ────────────────────────────────────────
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [
+      intel-media-driver     # VAAPI for UHD 630 (iHD)
+      libvdpau-va-gl
+    ];
+  };
+
+  environment.sessionVariables = {
+    LIBVA_DRIVER_NAME                 = "iHD";
+    GTK_THEME                         = "catppuccin-mocha-standard-blue-dark";
+    GTK_APPLICATION_PREFER_DARK_THEME = "1";
+    QT_QPA_PLATFORMTHEME              = "qt6ct";
+    QT_AUTO_SCREEN_SCALE_FACTOR       = "1";
+    XCURSOR_THEME                     = "catppuccin-mocha-dark-cursors";
+    XCURSOR_SIZE                      = "24";
+  };
+
+  # ── Bluetooth (Intel 9560 combo) ─────────────────────────────────────────────
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+  };
+  services.blueman.enable = true;
+
+  # ── Audio (PipeWire) ─────────────────────────────────────────────────────────
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+  };
+
+  # ── Display / Wayland ────────────────────────────────────────────────────────
+  services.xserver.enable = false;
+  programs.niri.enable = true;
+  programs.xwayland.enable = true;
+
+  xdg.portal = {
+    enable = true;
+    extraPortals = [
+      pkgs.xdg-desktop-portal-gtk
+      pkgs.xdg-desktop-portal-gnome
+    ];
+  };
+
+  # ── TUI Login: greetd + tuigreet ─────────────────────────────────────────────
+  services.greetd = {
+    enable = true;
+    settings = {
+      default_session = {
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --cmd niri";
+        user = "greeter";
+      };
+    };
+  };
+
+  # ── Security / Keyring ───────────────────────────────────────────────────────
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.greetd.enableGnomeKeyring = true;
+
+  # ── SSH ──────────────────────────────────────────────────────────────────────
+  services.openssh = {
+    enable = true;
+    settings = {
+      PasswordAuthentication = false;
+      PermitRootLogin = "no";
+    };
+  };
+
+  # ── Power ────────────────────────────────────────────────────────────────────
+  services.power-profiles-daemon.enable = true;
+  services.upower.enable = true;
+
+  # ── Shell: fish ──────────────────────────────────────────────────────────────
+  programs.fish.enable = true;
+
+  # ── Users ────────────────────────────────────────────────────────────────────
+  users.users.otakuracer = {
+    isNormalUser = true;
+    shell = pkgs.fish;
+    extraGroups = [ "wheel" "networkmanager" "video" "audio" "libvirtd" "kvm" ];
+  };
+
+  # ── System Packages ──────────────────────────────────────────────────────────
+  environment.systemPackages = with pkgs; [
+    # Terminal
+    alacritty
+    fish
+
+    # Editor
+    neovim
+    nixd
+    lua-language-server
+    nodePackages.bash-language-server
+    qt6.qtdeclarative  # provides qmlls
+
+    # Clipboard
+    cliphist
+    wl-clipboard
+
+    # Wayland / Display
+    wlr-randr
+    xwayland-satellite
+
+    # Screenshot
+    grim
+    slurp
+
+    # File Manager: Thunar stack
+    thunar
+    thunar-volman
+    thunar-archive-plugin
+    tumbler                      # thumbnails for Thunar
+    ffmpegthumbnailer            # video thumbnails
+    poppler                      # PDF thumbnails
+
+    # Archiver: Engrampa
+    engrampa
+
+    # Media
+    playerctl                    # media key control
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
+    gst_all_1.gst-plugins-bad
+    gst_all_1.gst-plugins-ugly
+    gst_all_1.gst-libav          # ffmpeg codec bridge
+
+    # Viewers
+    imv                          # image viewer (Wayland-native)
+    zathura                      # PDF/document viewer
+
+    # System tools
+    lxqt.lxqt-policykit          # polkit agent (auth popups)
+    seahorse                     # keyring/secrets manager UI
+    libsecret                    # secret service library
+
+    # Qt theming without Plasma
+    qt6ct
+    libsForQt5.qt5ct
+    libsForQt5.qtstyleplugins
+
+    # Theming: Catppuccin full stack
+    catppuccin-gtk                     # GTK theme
+    catppuccin-papirus-folders         # icon theme
+    catppuccin-cursors          # cursor theme
+    papirus-icon-theme                 # base for catppuccin-papirus
+
+    # CLI / TUI tools
+    yazi
+    unar
+    jq
+    fd
+    ripgrep
+    fzf
+    zoxide
+    imagemagick
+
+    # Video player
+    mpv
+    celluloid
+
+    # Apps
+    firefox
+    git
+    btop
+    wget
+    pavucontrol
+
+    # Quickshell (use noctalia's bundled version for compatibility)
+    inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
+  ];
+
+  # ── Fonts ────────────────────────────────────────────────────────────────────
+  fonts.packages = with pkgs; [
+    jetbrains-mono
+  ];
+
+  # ── MIME defaults ────────────────────────────────────────────────────────────
+  environment.etc."xdg/mimeapps.list".text = ''
+    [Default Applications]
+    inode/directory=thunar.desktop
+
+    application/zip=engrampa.desktop
+    application/x-tar=engrampa.desktop
+    application/x-bzip2=engrampa.desktop
+    application/x-gzip=engrampa.desktop
+    application/x-7z-compressed=engrampa.desktop
+    application/x-xz=engrampa.desktop
+    application/x-rar=engrampa.desktop
+    application/x-rar-compressed=engrampa.desktop
+    application/x-arj=engrampa.desktop
+    application/x-cab=engrampa.desktop
+    application/x-lzip=engrampa.desktop
+    application/x-iso9660-image=engrampa.desktop
+    application/x-rpm=engrampa.desktop
+    application/x-zstd-compressed-tar=engrampa.desktop
+    application/zstd=engrampa.desktop
+  '';
+
+  # Thunar volume/automount daemon
+  services.tumbler.enable = true;
+  programs.thunar.enable = true;
+  programs.thunar.plugins = with pkgs; [
+    thunar-volman
+    thunar-archive-plugin
+  ];
+
+
+  programs.nix-ld.enable = true;
+  services.gvfs.enable = true;
+
+  # ── Virtualisation: Virt-Manager + QEMU ─────────────────────────────────────
+  virtualisation.libvirtd = {
+    enable = true;
+    qemu = {
+      package           = pkgs.qemu_kvm;
+      runAsRoot         = false;
+      ovmf.enable       = true;
+      swtpm.enable      = true;
+      vhostUserPackages = with pkgs; [ virtiofsd ];
+    };
+  };
+
+  programs.virt-manager.enable = true;
+
+  # SPICE guest tools — shared clipboard + display resize in VM
+  services.spice-vdagentd.enable = true;
+  services.qemuGuest.enable      = true;
+
+  # Add user to libvirtd group — merged into users block above
+
+  system.stateVersion = "25.11";
+}
