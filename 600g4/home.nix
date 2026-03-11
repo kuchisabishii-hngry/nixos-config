@@ -45,7 +45,7 @@
       ll   = "ls -lah --color=auto";
       ".." = "cd ..";
       "..." = "cd ../..";
-      rebuild = "sudo nixos-rebuild switch --flake /etc/nixos#600g4-nixos";
+      rebuild = "sudo nixos-rebuild switch --flake ~/nixos-config/600g4#600g4-nixos";
     };
     functions = {
       y = ''
@@ -145,7 +145,7 @@
           "nvim-treesitter/nvim-treesitter",
           build = ":TSUpdate",
           config = function()
-            require("nvim-treesitter.configs").setup({
+            require("nvim-treesitter.config").setup({
               ensure_installed = { "nix", "lua", "bash", "qmljs", "python", "javascript" },
               highlight = { enable = true },
               indent    = { enable = true },
@@ -157,16 +157,17 @@
         {
           "neovim/nvim-lspconfig",
           config = function()
-            local lsp = require("lspconfig")
             local caps = require("cmp_nvim_lsp").default_capabilities()
 
-            lsp.nixd.setup({ capabilities = caps })
-            lsp.lua_ls.setup({
-              capabilities = caps,
-              settings = { Lua = { diagnostics = { globals = { "vim" } } } },
+            vim.lsp.config("nixd", { capabilities = caps })
+            vim.lsp.config("lua_ls", {
+                capabilities = caps,
+                settings = { Lua = { diagnostics = { globals = { "vim" } } } },
             })
-            lsp.bashls.setup({ capabilities = caps })
-            lsp.qmlls.setup({ capabilities = caps })
+            vim.lsp.config("bashls", { capabilities = caps })
+            vim.lsp.config("qmlls", { capabilities = caps })
+
+            vim.lsp.enable({ "nixd", "lua_ls", "bashls", "qmlls" })
 
             -- Keymaps on attach
             vim.api.nvim_create_autocmd("LspAttach", {
@@ -274,7 +275,7 @@
           foreground = "#c0caf5";
         };
       };
-      shell = {
+      terminal-shell = {
         program = "${pkgs.fish}/bin/fish";
       };
     };
@@ -365,6 +366,12 @@
   };
 
   # ── MIME: video → mpv / celluloid, images → imv, PDF → zathura ──────────────
+  xdg.desktopEntries.nvim = {
+    name = "Neovim";
+    exec = "alacritty -e nvim %F";
+    mimeType = [ "text/plain" "text/x-shellscript" ];
+  };
+
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
@@ -391,6 +398,9 @@
       "audio/ogg"       = "mpv.desktop";
       "audio/wav"       = "mpv.desktop";
       "audio/aac"       = "mpv.desktop";
+      #Text
+      "text/plain"      = "nvim.desktop";
+      "text/x-shellscript" = "nvim.desktop";
     };
   };
 
@@ -445,7 +455,7 @@
       PartOf      = [ "graphical-session.target" ];
     };
     Service = {
-      ExecStart = "${pkgs.cliphist}/bin/wl-paste --watch ${pkgs.cliphist}/bin/cliphist store";
+      ExecStart = "${pkgs.wl-clipboard}/bin/wl-paste --watch ${pkgs.cliphist}/bin/cliphist store";
       Restart   = "on-failure";
     };
     Install = {
