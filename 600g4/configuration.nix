@@ -206,6 +206,7 @@
     wget
     pavucontrol
     xdg-utils
+    glib
 
     # Quickshell (use noctalia's bundled version for compatibility)
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default

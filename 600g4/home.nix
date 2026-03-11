@@ -28,6 +28,8 @@
     MOZ_ENABLE_WAYLAND  = "1";
     XDG_CURRENT_DESKTOP = "niri";
     XDG_SESSION_TYPE    = "wayland";
+    XCURSOR_THEME       = "catppuccin-mocha-dark-cursors";
+    XCURSOR_SIZE        = "24";
   };
 
   # ── Shell: fish ──────────────────────────────────────────────────────────────
@@ -275,8 +277,11 @@
           foreground = "#c0caf5";
         };
       };
-      terminal-shell = {
-        program = "${pkgs.fish}/bin/fish";
+      
+      terminal = {
+        shell = {
+          program = "${pkgs.fish}/bin/fish";
+        };
       };
     };
   };
@@ -430,7 +435,7 @@
 
   home.pointerCursor = {
     name    = "catppuccin-mocha-dark-cursors";
-    package = pkgs.catppuccin-cursors;
+    package = pkgs.catppuccin-cursors.mochaDark;
     size    = 24;
     gtk.enable  = true;
     x11.enable  = true;
