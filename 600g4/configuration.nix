@@ -175,7 +175,7 @@
     libsecret                    # secret service library
 
     # Qt theming without Plasma
-    qt6ct
+    qt6Packages.qt6ct
     libsForQt5.qt5ct
     libsForQt5.qtstyleplugins
 
@@ -255,7 +255,6 @@
     qemu = {
       package           = pkgs.qemu_kvm;
       runAsRoot         = false;
-      ovmf.enable       = true;
       swtpm.enable      = true;
       vhostUserPackages = with pkgs; [ virtiofsd ];
     };
