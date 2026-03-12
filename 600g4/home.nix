@@ -27,6 +27,17 @@
   dconf.settings = {
       "org/gnome/desktop/interface" = {
           color-scheme = "prefer-dark";
+          gtk-theme     = "Tokyonight-Dark";
+          icon-theme    = "Papirus-Dark";
+          cursor-theme  = "Adwaita";
+          cursor-size   = 24;
+      };
+      "org/nemo/desktop" = {
+          use-desktop-grid = false;
+      };
+      "org/nemo/preferences" = {
+          default-folder-viewer = "list-view";
+          show-hidden-files     = false;
       };
   };
 
@@ -34,8 +45,6 @@
     MOZ_ENABLE_WAYLAND  = "1";
     XDG_CURRENT_DESKTOP = "niri";
     XDG_SESSION_TYPE    = "wayland";
-    XCURSOR_THEME       = "catppuccin-mocha-dark-cursors";
-    XCURSOR_SIZE        = "24";
     GSETTINGS_BACKEND   = "keyfile";
   };
 
@@ -61,17 +70,6 @@
       nix-gc    = "sudo nix-collect-garbage -d";
       nix-list  = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
       nircon    = "nvim /home/otakuracer/.config/niri/config.kdl";
-    };
-
-    functions = {
-      y = ''
-        set tmp (mktemp -t "yazi-cwd.XXXXX")
-        yazi $argv --cwd-file=$tmp
-        if set cwd (cat -- $tmp); and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
-          cd -- $cwd
-        end
-        rm -f -- $tmp
-      '';
     };
   };
 
@@ -263,6 +261,34 @@
           config = true,
         },
 
+        -- Indent guides
+        {
+            "lukas-reineke/indent-blankline.nvim",
+            main = "ibl",
+            config = function()
+                require("ibl").setup({
+                    indent = {
+                        char = "┃",
+                        highlight = "IblIndent",
+                    },
+                    scope = {
+                        enabled = true,
+                        char = "┃",
+                        highlight = "IblScope",
+                    },
+                })
+                vim.api.nvim_create_autocmd("ColorScheme", {
+                    pattern = "*",
+                    callback = function()
+                        vim.api.nvim_set_hl(0, "IblIndent", { fg = "#e0ff00" })
+                        vim.api.nvim_set_hl(0, "IblScope",  { fg = "#9d7cd8" })
+                    end,
+                })
+                vim.api.nvim_set_hl(0, "IblIndent", { fg = "#e0ff00" })
+                vim.api.nvim_set_hl(0, "IblScope",  { fg = "#9d7cd8" })
+            end,
+        },
+
       }) -- end lazy.setup
 
       -- ── Leader key ───────────────────────────────────────────────────────────
@@ -325,6 +351,99 @@
     enableFishIntegration = true;
   };
 
+  # ── Starship prompt ──────────────────────────────────────────────────────────
+  programs.starship = {
+    enable = true;
+    enableFishIntegration = true;
+    settings = {
+        add_newline = false;
+
+        format = lib.concatStrings [
+            "[](fg:#3d59a1)"
+            "$username"
+            "[](bg:#7aa2f7 fg:#3d59a1)"
+            "$directory"
+            "[](bg:#2ac3de fg:#7aa2f7)"
+            "$git_branch"
+            "$git_status"
+            "[](bg:#414868 fg:#2ac3de)"
+            "$nix_shell"
+            "$python"
+            "$lua"
+            "$nodejs"
+            "[](bg:#1a1b26 fg:#414868)"
+            "$time"
+            "[ ](fg:#1a1b26)"
+            ];
+
+        username = {
+            show_always = true;
+            style_user = "bg:#3d59a1 fg:#c0caf5 bold";
+            style_root = "bg:#3d59a1 fg:#ff0000 bold";
+            format = "[ $user ]($style)";
+        };
+
+        directory = {
+            style = "bg:#7aa2f7 fg:#1a1b26 bold";
+            format = "[ $path ]($style)";
+            truncation_length = 3;
+            truncate_to_repo = false;
+        };
+
+        git_branch = {
+            style = "bg:#2ac3de fg:#1a1b26 bold";
+            format = "[ $symbol$branch ]($style)";
+            symbol = " ";
+        };
+
+        git_status = {
+            style = "bg:#2ac3de fg:#1a1b26 bold";
+            format = "[$all_status$ahead_behind]($style)";
+        };
+
+        time = {
+            disabled = false;
+            style = "bg:#1a1b26 fg:#7aa2f7 bold";
+            format = "[ $time ]($style)";
+            time_format = "%H:%M";
+        };
+
+        character = {
+            success_symbol = "";
+            error_symbol = "";
+        };
+
+        nix_shell = {
+            disabled = false;
+            style = "bg:#414868 fg:#7dcfff bold";
+            format = "[ ❄️ $name ]($style)";
+            impure_msg = "[ ❄️ impure ]($style)";
+            pure_msg = "[ ❄️ pure ]($style)";
+        };
+
+        python = {
+            disabled = false;
+            style = "bg:#414868 fg:#e0af68 bold";
+            format = "[ 🐍 $version ]($style)";
+            detect_files = [ "requirements.txt" ".python-version" "pyproject.toml" ];
+        };
+
+        lua = {
+            disabled = false;
+            style = "bg:#414868 fg:#9d7cd8 bold";
+            format = "[ 🌙 $version ]($style)";
+            detect_files = [ "*.lua" ".luarc.json" ];
+        };
+
+        nodejs = {
+            disabled = false;
+            style = "bg:#414868 fg:#9ece6a bold";
+            format = "[ ⬢ $version ]($style)";
+            detect_files = [ "package.json" ".nvmrc" ];
+        };
+    };
+  };
+
   # ── Polkit agent autostart ───────────────────────────────────────────────────
   systemd.user.services.lxqt-policykit = {
     Unit = {
@@ -345,14 +464,14 @@
   programs.zathura = {
     enable = true;
     options = {
-      default-bg          = "#1e1e2e";   # Catppuccin Mocha base
-      default-fg          = "#cdd6f4";
-      statusbar-bg        = "#181825";
-      statusbar-fg        = "#cdd6f4";
-      inputbar-bg         = "#1e1e2e";
-      inputbar-fg         = "#cdd6f4";
-      highlight-color     = "#f5c2e7";
-      highlight-active-color = "#cba6f7";
+      default-bg          = "#1a1b26";   # Tokyo Night background
+      default-fg          = "#c0caf5";   # Tokyo Night foreground
+      statusbar-bg        = "#16161e";   # Tokyo Night background dark
+      statusbar-fg        = "#c0caf5";
+      inputbar-bg         = "#1a1b26";
+      inputbar-fg         = "#c0caf5";
+      highlight-color     = "#bb9af7";   # Tokyo Night purple
+      highlight-active-color = "#7aa2f7"; # Tokyo Night blue
       font                = "JetBrains Mono 11";
       selection-clipboard = "clipboard";
     };
@@ -372,8 +491,8 @@
       osc              = true;
       osd-font         = "JetBrains Mono";
       osd-font-size    = 28;
-      osd-color        = "#cdd6f4";       # Catppuccin text
-      osd-border-color = "#1e1e2e";       # Catppuccin base
+      osd-color        = "#c0caf5";       # Tokyo Night text
+      osd-border-color = "#1a1b26";       # Tokyo Night base
 
       # Behaviour
       save-position-on-quit = true;
@@ -419,6 +538,14 @@
       "audio/ogg"       = "mpv.desktop";
       "audio/wav"       = "mpv.desktop";
       "audio/aac"       = "mpv.desktop";
+      # Browser → floorp
+      "text/html"                        = "floorp.desktop";
+      "x-scheme-handler/http"            = "floorp.desktop";
+      "x-scheme-handler/https"           = "floorp.desktop";
+      "x-scheme-handler/ftp"             = "floorp.desktop";
+      "application/xhtml+xml"            = "floorp.desktop";
+      # Directory → nemo
+      "inode/directory" = "nemo.desktop";
       #Text
       "text/plain"      = "nvim.desktop";
       "text/x-shellscript" = "nvim.desktop";
@@ -429,16 +556,16 @@
   gtk = {
     enable = true;
     theme = {
-      name    = "catppuccin-mocha-standard-blue-dark";
-      package = pkgs.catppuccin-gtk;
+      name    = "Tokyonight-Dark";
+      package = pkgs.tokyonight-gtk-theme;
     };
     iconTheme = {
       name    = "Papirus-Dark";
-      package = pkgs.catppuccin-papirus-folders;
+      package = pkgs.papirus-icon-theme;
     };
     cursorTheme = {
-      name    = "catppuccin-mocha-dark-cursors";
-      package = pkgs.catppuccin-cursors;
+      name    = "Adwaita";
+      package = pkgs.adwaita-icon-theme;
       size    = 24;
     };
     gtk3.extraConfig = {
@@ -450,8 +577,8 @@
   };
 
   home.pointerCursor = {
-    name    = "catppuccin-mocha-dark-cursors";
-    package = pkgs.catppuccin-cursors;
+    name    = "Adwaita";
+    package = pkgs.adwaita-icon-theme;
     size    = 24;
     gtk.enable  = true;
     x11.enable  = true;
@@ -483,6 +610,8 @@
       WantedBy = [ "graphical-session.target" ];
     };
   };
+
+  # ── Nemo dark mode via dconf ─────────────────────────────────────────────────
 
   # ── XDG User Directories ─────────────────────────────────────────────────────
   xdg.userDirs = {

@@ -47,12 +47,16 @@
 
   environment.sessionVariables = {
     LIBVA_DRIVER_NAME                 = "iHD";
-    GTK_THEME                         = "catppuccin-mocha-standard-blue-dark";
+    GTK_THEME                         = "Tokyonight-Dark";
     GTK_APPLICATION_PREFER_DARK_THEME = "1";
     QT_QPA_PLATFORMTHEME              = "qt6ct";
     QT_AUTO_SCREEN_SCALE_FACTOR       = "1";
-    XCURSOR_THEME                     = "catppuccin-mocha-dark-cursors";
+    XCURSOR_THEME                     = "Adwaita";
     XCURSOR_SIZE                      = "24";
+    XDG_DATA_DIRS = [
+        "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}"
+        "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}"
+    ];
   };
 
   # ── Bluetooth (Intel 9560 combo) ─────────────────────────────────────────────
@@ -162,7 +166,9 @@
     grim
     slurp
 
-    # File Manager: Thunar integration
+    # File Manager: Nemo
+    nemo
+    nemo-fileroller              # archive integration
     ffmpegthumbnailer            # video thumbnails
     poppler                      # PDF thumbnails
 
@@ -193,13 +199,11 @@
     libsForQt5.qtstyleplugins
 
     # Theming: Catppuccin full stack
-    catppuccin-gtk                     # GTK theme
-    catppuccin-papirus-folders         # icon theme
-    catppuccin-cursors          # cursor theme
+    tokyonight-gtk-theme                     # GTK theme
     papirus-icon-theme                 # base for catppuccin-papirus
 
     # CLI / TUI tools
-    yazi
+    superfile
     unar
     jq
     fd
@@ -214,10 +218,10 @@
 
     # Apps
     btop
-    firefox
     floorp-bin
     git
     glib
+    gsettings-desktop-schemas
     onlyoffice-desktopeditors
     pavucontrol
     spotify
@@ -238,7 +242,7 @@
   # ── MIME defaults ────────────────────────────────────────────────────────────
   environment.etc."xdg/mimeapps.list".text = ''
     [Default Applications]
-    inode/directory=thunar.desktop
+    inode/directory=nemo.desktop
 
     application/zip=engrampa.desktop
     application/x-tar=engrampa.desktop
@@ -257,17 +261,10 @@
     application/zstd=engrampa.desktop
   '';
 
-  # Thunar volume/automount daemon
-  services.tumbler.enable = true;
-  programs.thunar.enable = true;
-  programs.thunar.plugins = with pkgs; [
-    thunar-volman
-    thunar-archive-plugin
-  ];
-
+  # ── File Manager: Nemo ───────────────────────────────────────────────────────
+  services.gvfs.enable = true;   # needed for trash, network mounts, MTP
 
   programs.nix-ld.enable = true;
-  services.gvfs.enable = true;
 
   # ── Virtualisation: Virt-Manager + QEMU ─────────────────────────────────────
   virtualisation.libvirtd = {
@@ -284,7 +281,6 @@
 
   # SPICE guest tools — shared clipboard + display resize in VM
   services.spice-vdagentd.enable = true;
-  services.qemuGuest.enable      = true;
 
   # Add user to libvirtd group — merged into users block above
 
