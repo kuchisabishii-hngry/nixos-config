@@ -43,7 +43,6 @@
 
   home.sessionVariables = {
     MOZ_ENABLE_WAYLAND  = "1";
-    XDG_CURRENT_DESKTOP = "niri";
     XDG_SESSION_TYPE    = "wayland";
     GSETTINGS_BACKEND   = "keyfile";
   };
@@ -70,6 +69,7 @@
       nix-gc    = "sudo nix-collect-garbage -d";
       nix-list  = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
       nircon    = "nvim /home/otakuracer/.config/niri/config.kdl";
+      hyrcon    = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
     };
   };
 

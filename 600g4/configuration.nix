@@ -78,12 +78,18 @@
   services.xserver.enable = false;
   programs.niri.enable = true;
   programs.xwayland.enable = true;
+  programs.hyprland = {
+      enable    = true;
+      withUWSM  = true;
+  };
+
 
   xdg.portal = {
     enable = true;
     extraPortals = [
       pkgs.xdg-desktop-portal-gtk
       pkgs.xdg-desktop-portal-wlr
+      pkgs.xdg-desktop-portal-hyprland
     ];
     config.common.default = "*";
   };
@@ -93,7 +99,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --cmd niri";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${pkgs.hyprland}/share/wayland-sessions:${pkgs.niri}/share/wayland-sessions";
         user = "greeter";
       };
     };
@@ -203,14 +209,14 @@
     papirus-icon-theme                 # base for catppuccin-papirus
 
     # CLI / TUI tools
+    fd
+    fzf
+    imagemagick
+    jq
+    ripgrep
     superfile
     unar
-    jq
-    fd
-    ripgrep
-    fzf
     zoxide
-    imagemagick
 
     # Video player
     mpv
@@ -222,10 +228,12 @@
     git
     glib
     gsettings-desktop-schemas
+    hyprlauncher
     onlyoffice-desktopeditors
     pavucontrol
     spotify
     telegram-desktop
+    uwsm
     wget
     winbox4
     xdg-utils
@@ -285,6 +293,8 @@
   # Add user to libvirtd group — merged into users block above
 
   programs.dconf.enable = true;
+
+  environment.pathsToLink = [ "/share/wayland-sessions" ];
 
   system.stateVersion = "25.11";
 }
