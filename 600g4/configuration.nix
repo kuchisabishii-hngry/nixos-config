@@ -13,6 +13,7 @@
   boot.loader.limine = {
     enable = true;
     maxGenerations = 10;
+    style.wallpapers = [];
   };
   boot.loader.efi.canTouchEfiVariables = true;
 
@@ -78,8 +79,9 @@
     enable = true;
     extraPortals = [
       pkgs.xdg-desktop-portal-gtk
-      pkgs.xdg-desktop-portal-gnome
+      pkgs.xdg-desktop-portal-wlr
     ];
+    config.common.default = "*";
   };
 
   # ── TUI Login: greetd + tuigreet ─────────────────────────────────────────────
@@ -120,6 +122,21 @@
     extraGroups = [ "wheel" "networkmanager" "video" "audio" "libvirtd" "kvm" ];
   };
 
+  # ── Flatpak ──────────────────────────────────────────────────────────────────
+  services.flatpak.enable = true;
+
+  system.activationScripts.flatpakRemote = {
+    text = ''
+      if ${pkgs.flatpak}/bin/flatpak remote-list --system | grep -q "flathub"; then
+        echo "Flathub remote already exists, skipping."
+      else
+        ${pkgs.flatpak}/bin/flatpak remote-add --system --if-not-exists flathub \
+          https://dl.flathub.org/repo/flathub.flatpakrepo
+      fi
+    '';
+    deps = [];
+  };
+
   # ── System Packages ──────────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
     # Terminal
@@ -145,11 +162,7 @@
     grim
     slurp
 
-    # File Manager: Thunar stack
-    thunar
-    thunar-volman
-    thunar-archive-plugin
-    tumbler                      # thumbnails for Thunar
+    # File Manager: Thunar integration
     ffmpegthumbnailer            # video thumbnails
     poppler                      # PDF thumbnails
 
@@ -200,13 +213,18 @@
     celluloid
 
     # Apps
-    firefox
-    git
     btop
-    wget
-    pavucontrol
-    xdg-utils
+    firefox
+    floorp-bin
+    git
     glib
+    onlyoffice-desktopeditors
+    pavucontrol
+    spotify
+    telegram-desktop
+    wget
+    winbox4
+    xdg-utils
 
     # Quickshell (use noctalia's bundled version for compatibility)
     inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
@@ -256,7 +274,7 @@
     enable = true;
     qemu = {
       package           = pkgs.qemu_kvm;
-      runAsRoot         = false;
+      runAsRoot         = true;
       swtpm.enable      = true;
       vhostUserPackages = with pkgs; [ virtiofsd ];
     };
@@ -269,6 +287,8 @@
   services.qemuGuest.enable      = true;
 
   # Add user to libvirtd group — merged into users block above
+
+  programs.dconf.enable = true;
 
   system.stateVersion = "25.11";
 }

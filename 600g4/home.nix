@@ -16,7 +16,7 @@
   home.file.".local/bin/noctalia-qs" = {
     text = ''
       #!/bin/sh
-      exec /nix/store/$(ls /nix/store | grep quickshell | grep -v '\.drv' | grep -v debug | head -1)/bin/qs "$@"
+      exec ${inputs.noctalia.packages.x86_64-linux.default}/bin/qs "$@"
     '';
     executable = true;
   };
@@ -24,12 +24,19 @@
   home.sessionPath = [ "$HOME/.local/bin" ];
 
   # ── Session Variables ────────────────────────────────────────────────────────
+  dconf.settings = {
+      "org/gnome/desktop/interface" = {
+          color-scheme = "prefer-dark";
+      };
+  };
+
   home.sessionVariables = {
     MOZ_ENABLE_WAYLAND  = "1";
     XDG_CURRENT_DESKTOP = "niri";
     XDG_SESSION_TYPE    = "wayland";
     XCURSOR_THEME       = "catppuccin-mocha-dark-cursors";
     XCURSOR_SIZE        = "24";
+    GSETTINGS_BACKEND   = "keyfile";
   };
 
   # ── Shell: fish ──────────────────────────────────────────────────────────────
@@ -42,13 +49,20 @@
       zoxide init fish | source
     '';
     shellAliases = {
-      v    = "nvim";
-      ls   = "ls --color=auto";
-      ll   = "ls -lah --color=auto";
-      ".." = "cd ..";
-      "..." = "cd ../..";
-      rebuild = "sudo nixos-rebuild switch --flake ~/nixos-config/600g4#600g4-nixos";
+      v         = "nvim";
+      ls        = "ls --color=auto";
+      ll        = "ls -lah --color=auto";
+      ".."      = "cd ..";
+      "..."     = "cd ../..";
+      rebuild   = "sudo nixos-rebuild switch --flake /home/otakuracer/nixos-config/600g4#600g4-nixos";
+      conf      = "nvim /home/otakuracer/nixos-config/600g4/configuration.nix";
+      hm        = "nvim /home/otakuracer/nixos-config/600g4/home.nix";
+      flk       = "nvim /home/otakuracer/nixos-config/600g4/flake.nix";
+      nix-gc    = "sudo nix-collect-garbage -d";
+      nix-list  = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
+      nircon    = "nvim /home/otakuracer/.config/niri/config.kdl";
     };
+
     functions = {
       y = ''
         set tmp (mktemp -t "yazi-cwd.XXXXX")
@@ -279,9 +293,11 @@
       };
       
       terminal = {
-        shell = {
-          program = "${pkgs.fish}/bin/fish";
-        };
+        shell.program = "${pkgs.fish}/bin/fish";
+      };
+
+      selection = {
+          save_to_clipboard = true;
       };
     };
   };
@@ -290,10 +306,10 @@
   programs.git = {
     enable = true;
     settings = {
-      user.name  = "otakuracer";
-      user.email = "aditmadjid@gmail.com";
-      init.defaultBranch = "main";
-      core.editor = "nvim";
+        user.name           = "otakuracer";
+        user.email          = "aditmadjid@gmail.com";
+        init.defaultBranch  = "main";
+        core.editor         = "nvim";
     };
   };
 
@@ -435,7 +451,7 @@
 
   home.pointerCursor = {
     name    = "catppuccin-mocha-dark-cursors";
-    package = pkgs.catppuccin-cursors.mochaDark;
+    package = pkgs.catppuccin-cursors;
     size    = 24;
     gtk.enable  = true;
     x11.enable  = true;
