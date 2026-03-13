@@ -23,6 +23,17 @@
 
   home.sessionPath = [ "$HOME/.local/bin" ];
 
+  # ── AGS (Aylur's GTK Shell) ──────────────────────────────────────────────────
+  # The installed AGS wrapper bundles both GTK3+GTK4 causing conflicts.
+  # nix shell gives a clean environment; nix caches it after first run.
+  home.file.".local/bin/ags" = {
+    text = ''
+      #!/bin/sh
+      exec nix shell github:aylur/ags --command ags "$@"
+    '';
+    executable = true;
+  };
+
   # ── Session Variables ────────────────────────────────────────────────────────
   dconf.settings = {
       "org/gnome/desktop/interface" = {
