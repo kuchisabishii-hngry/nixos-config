@@ -76,7 +76,6 @@
 
   # ── Display / Wayland ────────────────────────────────────────────────────────
   services.xserver.enable = false;
-  programs.niri.enable = true;
   programs.xwayland.enable = true;
   programs.hyprland = {
       enable    = true;
@@ -88,7 +87,6 @@
     enable = true;
     extraPortals = [
       pkgs.xdg-desktop-portal-gtk
-      pkgs.xdg-desktop-portal-wlr
       pkgs.xdg-desktop-portal-hyprland
     ];
     config.common.default = "*";
@@ -99,7 +97,7 @@
     enable = true;
     settings = {
       default_session = {
-        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${pkgs.hyprland}/share/wayland-sessions:${pkgs.niri}/share/wayland-sessions";
+        command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --remember-session --sessions ${pkgs.hyprland}/share/wayland-sessions";
         user = "greeter";
       };
     };
@@ -166,7 +164,6 @@
 
     # Wayland / Display
     wlr-randr
-    xwayland-satellite
 
     # Screenshot
     grim
@@ -228,7 +225,6 @@
     git
     glib
     gsettings-desktop-schemas
-    hyprlauncher
     onlyoffice-desktopeditors
     pavucontrol
     spotify
@@ -238,13 +234,21 @@
     winbox4
     xdg-utils
 
-    # Quickshell (use noctalia's bundled version for compatibility)
-    inputs.noctalia.packages.${pkgs.stdenv.hostPlatform.system}.default
+    # hyprland utilities
+    hyprlock
+    swww
+    hypridle
+    hyprshot
+    mako
+    rofi
+    libappindicator-gtk3
+    libdbusmenu-gtk3
   ];
 
   # ── Fonts ────────────────────────────────────────────────────────────────────
   fonts.packages = with pkgs; [
     jetbrains-mono
+    nerd-fonts.jetbrains-mono
   ];
 
   # ── MIME defaults ────────────────────────────────────────────────────────────

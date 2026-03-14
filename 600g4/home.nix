@@ -1,25 +1,10 @@
 { config, pkgs, inputs, lib, ... }:
 
 {
-  imports = [
-    inputs.noctalia.homeModules.default
-  ];
 
   home.username = "otakuracer";
   home.homeDirectory = "/home/otakuracer";
   home.stateVersion = "25.11";
-
-  # ── Noctalia Shell ───────────────────────────────────────────────────────────
-  programs.noctalia-shell.enable = true;
-
-  # ── Noctalia-qs wrapper ──────────────────────────────────────────────────────
-  home.file.".local/bin/noctalia-qs" = {
-    text = ''
-      #!/bin/sh
-      exec ${inputs.noctalia.packages.x86_64-linux.default}/bin/qs "$@"
-    '';
-    executable = true;
-  };
 
   home.sessionPath = [ "$HOME/.local/bin" ];
 
@@ -79,8 +64,7 @@
       flk       = "nvim /home/otakuracer/nixos-config/600g4/flake.nix";
       nix-gc    = "sudo nix-collect-garbage -d";
       nix-list  = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
-      nircon    = "nvim /home/otakuracer/.config/niri/config.kdl";
-      hyrcon    = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
+      hyprcon    = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
     };
   };
 
@@ -102,6 +86,10 @@
 
     initLua = ''
       -- ── Options ──────────────────────────────────────────────────────────────
+      -- Leader key must be set before lazy loads
+      vim.g.mapleader      = " "
+      vim.g.maplocalleader = "\\"
+
       vim.opt.number         = true
       vim.opt.relativenumber = true
       vim.opt.expandtab      = true
@@ -155,13 +143,28 @@
 
         -- Fuzzy finder
         {
-          "nvim-telescope/telescope.nvim",
-          dependencies = { "nvim-lua/plenary.nvim" },
+          "ibhagwan/fzf-lua",
+          dependencies = { "nvim-tree/nvim-web-devicons" },
           config = function()
-            local t = require("telescope.builtin")
-            vim.keymap.set("n", "<leader>ff", t.find_files)
-            vim.keymap.set("n", "<leader>fg", t.live_grep)
-            vim.keymap.set("n", "<leader>fb", t.buffers)
+            local fzf = require("fzf-lua")
+            fzf.setup({
+              "telescope",
+              winopts = {
+                height  = 0.80,
+                width   = 0.85,
+                preview = { layout = "horizontal", ratio = 60 },
+              },
+              keymap = {
+                fzf = { ["ctrl-q"] = "select-all+accept" },  -- send all to quickfix
+              },
+            })
+            vim.keymap.set("n", "<leader>ff", fzf.files,        { desc = "Find files" })
+            vim.keymap.set("n", "<leader>fg", fzf.live_grep,    { desc = "Live grep" })
+            vim.keymap.set("n", "<leader>fb", fzf.buffers,      { desc = "Buffers" })
+            vim.keymap.set("n", "<leader>fr", fzf.oldfiles,     { desc = "Recent files" })
+            vim.keymap.set("n", "<leader>fh", fzf.help_tags,    { desc = "Help tags" })
+            vim.keymap.set("n", "<leader>/",  fzf.grep_curbuf,  { desc = "Grep current buffer" })
+            vim.keymap.set("n", "<leader>gs", fzf.git_status,   { desc = "Git status (fzf)" })
           end,
         },
 
@@ -300,10 +303,99 @@
             end,
         },
 
+        -- Git TUI (complements gitsigns)
+        {
+          "tpope/vim-fugitive",
+          cmd = { "Git", "Gdiffsplit", "Gblame", "Gclog" },
+          keys = {
+            { "<leader>gg", "<cmd>Git<CR>",        desc = "Git status (fugitive)" },
+            { "<leader>gc", "<cmd>Git commit<CR>", desc = "Git commit" },
+            { "<leader>gP", "<cmd>Git push<CR>",   desc = "Git push" },
+            { "<leader>gl", "<cmd>Git pull<CR>",   desc = "Git pull" },
+            { "<leader>gD", "<cmd>Gdiffsplit<CR>", desc = "Git diff split" },
+          },
+        },
+
+        -- Buffer tabs
+        {
+          "akinsho/bufferline.nvim",
+          dependencies = { "nvim-tree/nvim-web-devicons" },
+          event = "VeryLazy",
+          config = function()
+            require("bufferline").setup({
+              options = {
+                mode             = "buffers",
+                numbers          = "ordinal",
+                close_command    = "bdelete! %d",
+                diagnostics      = "nvim_lsp",
+                diagnostics_indicator = function(count, level)
+                  local icons = { error = " ", warning = " " }
+                  return (icons[level] or "") .. count
+                end,
+                offsets = {{
+                  filetype  = "NvimTree",
+                  text      = "File Explorer",
+                  highlight = "Directory",
+                  separator = true,
+                }},
+                separator_style         = "slant",
+                always_show_bufferline  = true,
+              },
+            })
+            vim.keymap.set("n", "<Tab>",   "<cmd>BufferLineCycleNext<CR>", { silent = true, desc = "Next buffer" })
+            vim.keymap.set("n", "<S-Tab>", "<cmd>BufferLineCyclePrev<CR>", { silent = true, desc = "Prev buffer" })
+            vim.keymap.set("n", "<leader>bx", "<cmd>BufferLinePickClose<CR>", { silent = true, desc = "Pick close buffer" })
+            vim.keymap.set("n", "<leader>bd", "<cmd>bdelete<CR>",             { silent = true, desc = "Delete buffer" })
+            for i = 1, 9 do
+              vim.keymap.set("n", "<leader>" .. i, function()
+                require("bufferline").go_to(i, true)
+              end, { silent = true, desc = "Buffer " .. i })
+            end
+          end,
+        },
+
+        -- Keybinding hints
+        {
+          "folke/which-key.nvim",
+          event = "VeryLazy",
+          config = function()
+            local wk = require("which-key")
+            wk.setup({
+              delay  = 400,
+              win    = { border = "rounded" },
+              icons  = { mappings = false },
+            })
+            wk.add({
+              { "<leader>f", group = "Find (fzf-lua)" },
+              { "<leader>g", group = "Git" },
+              { "<leader>b", group = "Buffer" },
+              { "<leader>l", group = "LSP" },
+              { "<leader>e", desc  = "Explorer toggle" },
+            })
+          end,
+        },
+
+        -- Inline color previews (#hex, rgb(), etc.)
+        {
+          "NvChad/nvim-colorizer.lua",
+          event = "BufReadPre",
+          config = function()
+            require("colorizer").setup({
+              filetypes = { "*" },
+              user_default_options = {
+                RGB    = true,
+                RRGGBB = true,
+                names  = false,
+                css    = true,
+                css_fn = true,
+                mode   = "background",
+              },
+            })
+          end,
+        },
+
       }) -- end lazy.setup
 
-      -- ── Leader key ───────────────────────────────────────────────────────────
-      vim.g.mapleader = " "
     '';
   };
 
@@ -636,6 +728,216 @@
     publicShare       = "${config.home.homeDirectory}/Public";
     templates         = "${config.home.homeDirectory}/Templates";
     videos            = "${config.home.homeDirectory}/Videos";
+  };
+
+  # ── Waybar ───────────────────────────────────────────────────────────────────
+  programs.waybar = {
+    enable = true;
+    settings = {
+      mainBar = {
+        layer    = "top";
+        position = "top";
+        height   = 40;
+        margin-top   = 8;
+        margin-left  = 12;
+        margin-right = 12;
+        spacing      = 6;
+
+        modules-left   = [ "hyprland/workspaces" "hyprland/window" ];
+        modules-center = [ "clock" ];
+        modules-right  = [ "pulseaudio" "network" "cpu" "memory" "tray" ];
+
+        "hyprland/workspaces" = {
+          format      = "{icon}";
+          on-click    = "activate";
+          format-icons = {
+            "1"     = "󰲠";
+            "2"     = "󰲢";
+            "3"     = "󰲤";
+            "4"     = "󰲦";
+            "5"     = "󰲨";
+            active  = "󰮯";
+            default = "󰊠";
+          };
+          persistent-workspaces = {
+            "*" = 5;
+          };
+        };
+
+        "hyprland/window" = {
+          format          = "  {}";
+          max-length      = 40;
+          separate-outputs = true;
+        };
+
+        clock = {
+          format         = "󰥔  {:%H:%M}";
+          format-alt     = "󰃶  {:%A, %d %B %Y}";
+          tooltip-format = "<tt>{calendar}</tt>";
+        };
+
+        cpu = {
+          format   = "󰻠  {usage}%";
+          interval = 2;
+        };
+
+        memory = {
+          format   = "󰍛  {used:0.1f}G";
+          interval = 2;
+        };
+
+        pulseaudio = {
+          format       = "{icon}  {volume}%";
+          format-muted = "󰝟  muted";
+          format-icons = {
+            default = [ "󰕿" "󰖀" "󰕾" ];
+          };
+          on-click = "pavucontrol";
+        };
+
+        network = {
+          format-wifi        = "󰤨  {essid}";
+          format-ethernet    = "󰈀  {ifname}";
+          format-disconnected = "󰤭  disconnected";
+          tooltip-format     = "{ipaddr} via {gwaddr}";
+        };
+
+        tray = {
+          spacing   = 8;
+          icon-size = 16;
+        };
+      };
+    };
+
+    style = ''
+      * {
+        font-family: "JetBrains Mono", monospace;
+        font-size: 13px;
+        border: none;
+        border-radius: 0;
+        min-height: 0;
+      }
+
+      /* Tokyo Night palette */
+      @define-color bg      #1a1b26;
+      @define-color bg-alt  #16161e;
+      @define-color bg-hl   #292e42;
+      @define-color fg      #c0caf5;
+      @define-color fg-dim  #565f89;
+      @define-color blue    #7aa2f7;
+      @define-color cyan    #7dcfff;
+      @define-color green   #9ece6a;
+      @define-color yellow  #e0af68;
+      @define-color orange  #ff9e64;
+      @define-color red     #f7768e;
+      @define-color magenta #bb9af7;
+
+      window#waybar {
+        background: transparent;
+      }
+
+      .modules-left,
+      .modules-center,
+      .modules-right {
+        background: @bg;
+        border-radius: 12px;
+        padding: 2px 8px;
+        border: 1px solid @bg-hl;
+      }
+
+      /* Workspaces */
+      #workspaces {
+        padding: 0 4px;
+      }
+
+      #workspaces button {
+        padding: 2px 6px;
+        color: @fg-dim;
+        background: transparent;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+      }
+
+      #workspaces button:hover {
+        color: @fg;
+        background: @bg-hl;
+      }
+
+      #workspaces button.active {
+        color: @blue;
+        background: @bg-hl;
+      }
+
+      #workspaces button.urgent {
+        color: @red;
+      }
+
+      /* Window title */
+      #window {
+        color: @fg-dim;
+        padding: 0 8px;
+      }
+
+      /* Clock */
+      #clock {
+        color: @magenta;
+        font-weight: bold;
+        padding: 0 8px;
+      }
+
+      /* CPU */
+      #cpu {
+        color: @cyan;
+        padding: 0 8px;
+      }
+
+      /* Memory */
+      #memory {
+        color: @blue;
+        padding: 0 8px;
+      }
+
+      /* Audio */
+      #pulseaudio {
+        color: @green;
+        padding: 0 8px;
+      }
+
+      #pulseaudio.muted {
+        color: @fg-dim;
+      }
+
+      /* Network */
+      #network {
+        color: @yellow;
+        padding: 0 8px;
+      }
+
+      #network.disconnected {
+        color: @red;
+      }
+
+      /* Tray */
+      #tray {
+        padding: 0 6px;
+      }
+
+      #tray > .passive {
+        -gtk-icon-effect: dim;
+      }
+
+      #tray > .needs-attention {
+        -gtk-icon-effect: highlight;
+        color: @orange;
+      }
+
+      tooltip {
+        background: @bg-alt;
+        border: 1px solid @bg-hl;
+        border-radius: 8px;
+        color: @fg;
+      }
+    '';
   };
 
   programs.home-manager.enable = true;
