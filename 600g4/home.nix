@@ -8,15 +8,80 @@
 
   home.sessionPath = [ "$HOME/.local/bin" ];
 
-  # ── AGS (Aylur's GTK Shell) ──────────────────────────────────────────────────
-  # The installed AGS wrapper bundles both GTK3+GTK4 causing conflicts.
-  # nix shell gives a clean environment; nix caches it after first run.
-  home.file.".local/bin/ags" = {
-    text = ''
-      #!/bin/sh
-      exec nix shell github:aylur/ags --command ags "$@"
-    '';
+  # ── Packages ─────────────────────────────────────────────────────────────────
+  home.packages = with pkgs; [
+    libnotify   # notify-send (used by osd-notify.sh)
+    python3     # used by osd-notify.sh to parse hyprctl JSON
+    playerctl   # MPRIS media control + used by mpris-notify service
+    aider-chat
+  ];
+
+  # ── OSD notification script ───────────────────────────────────────────────────
+  home.file.".local/bin/osd-notify.sh" = {
     executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      case "$1" in
+        volume-up)
+          VOL=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf "%d", $2 * 100}')
+          notify-send \
+            -h string:x-canonical-private-synchronous:volume \
+            -h string:category:osd \
+            -t 2000 "󰕾 Volume" "$VOL%" ;;
+        volume-down)
+          VOL=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf "%d", $2 * 100}')
+          notify-send \
+            -h string:x-canonical-private-synchronous:volume \
+            -h string:category:osd \
+            -t 2000 "󰖀 Volume" "$VOL%" ;;
+        volume-mute)
+          MUTED=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -c MUTED)
+          if [ "$MUTED" -gt 0 ]; then
+            notify-send \
+              -h string:x-canonical-private-synchronous:volume \
+              -h string:category:osd \
+              -t 2000 "󰝟 Volume" "Muted"
+          else
+            VOL=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{printf "%d", $2 * 100}')
+            notify-send \
+              -h string:x-canonical-private-synchronous:volume \
+              -h string:category:osd \
+              -t 2000 "󰕾 Volume" "$VOL%"
+          fi ;;
+        capslock)
+          sleep 0.1
+          STATUS=$(hyprctl devices -j | \
+            python3 -c "
+      import sys,json
+      d=json.load(sys.stdin)
+      kb=d.get('keyboards',[])
+      for k in kb:
+        if k.get('main'):
+          print('ON' if k['capsLock'] else 'OFF')
+          break
+      ")
+          notify-send \
+            -h string:x-canonical-private-synchronous:capslock \
+            -h string:category:osd \
+            -t 2000 "󰪛 Caps Lock" "$STATUS" ;;
+        numlock)
+          sleep 0.1
+          STATUS=$(hyprctl devices -j | \
+            python3 -c "
+      import sys,json
+      d=json.load(sys.stdin)
+      kb=d.get('keyboards',[])
+      for k in kb:
+        if k.get('main'):
+          print('ON' if k['numLock'] else 'OFF')
+          break
+      ")
+          notify-send \
+            -h string:x-canonical-private-synchronous:numlock \
+            -h string:category:osd \
+            -t 2000 "󰎠 Num Lock" "$STATUS" ;;
+      esac
+    '';
   };
 
   # ── Session Variables ────────────────────────────────────────────────────────
@@ -38,10 +103,54 @@
   };
 
   home.sessionVariables = {
-    MOZ_ENABLE_WAYLAND  = "1";
-    XDG_SESSION_TYPE    = "wayland";
     GSETTINGS_BACKEND   = "keyfile";
   };
+
+  home.file.".config/uwsm/env".text = ''
+    export GDK_BACKEND=wayland,x11,*
+    export HYPRCURSOR_SIZE=24
+    export MOZ_ENABLE_WAYLAND=1
+    export QT_AUTO_SCREEN_SCALE_FACTOR=1
+    export QT_QPA_PLATFORM=wayland;xcb
+    export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
+    export XCURSOR_SIZE=24
+    '';
+  home.file.".config/uwsm/env-hyprland".text = ''
+    export HYPRSHOT_DIR=/home/otakuracer/Pictures/Screenshots/
+    '';
+
+  home.file.".config/waybar/scripts/netspeed.sh" = {
+    executable = true;
+    text = ''
+    #!/usr/bin/env bash 
+    IFACE=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $5; exit}')
+    [[ -z "$IFACE" ]] && echo "󰈀 -- / --" && exit
+    RX1=$(cat /sys/class/net/$IFACE/statistics/rx_bytes)
+    TX1=$(cat /sys/class/net/$IFACE/statistics/tx_bytes)
+    sleep 0.5
+    RX2=$(cat /sys/class/net/$IFACE/statistics/rx_bytes)
+    TX2=$(cat /sys/class/net/$IFACE/statistics/tx_bytes)
+
+    format_speed() {
+      local bytes=$1
+      local bits=$(( bytes * 8 ))
+      if (( bits >= 1000000000 )); then
+        awk "BEGIN {printf \"%.1fGbps\", $bits/1000000000}"
+      elif (( bits >= 1000000 )); then
+        awk "BEGIN {printf \"%.1fMbps\", $bits/1000000}"
+      elif (( bits >= 1000 )); then
+        awk "BEGIN {printf \"%.0fKbps\", $bits/1000}"
+      else
+        printf "%dbps" "$bits"
+      fi
+    }
+
+    RX=$(format_speed $(( (RX2 - RX1) * 2 )))
+    TX=$(format_speed $(( (TX2 - TX1) * 2 )))
+    echo "󰇚 ''${RX}  󰕒 ''${TX}"
+  '';
+};
+
 
   # ── Shell: fish ──────────────────────────────────────────────────────────────
   programs.fish = {
@@ -50,10 +159,13 @@
       set -gx EDITOR nvim
       set -gx VISUAL nvim
       set -gx TERMINAL alacritty
+      set -gx OLLAMA_API_BASE http://localhost:11434
       zoxide init fish | source
+      fastfetch
     '';
     shellAliases = {
       v         = "nvim";
+      svim      = "sudo -E nvim";
       ls        = "ls --color=auto";
       ll        = "ls -lah --color=auto";
       ".."      = "cd ..";
@@ -64,7 +176,11 @@
       flk       = "nvim /home/otakuracer/nixos-config/600g4/flake.nix";
       nix-gc    = "sudo nix-collect-garbage -d";
       nix-list  = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
-      hyprcon    = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
+      last3     = "sudo nix-env --delete-generations +3 --profile /nix/var/nix/profiles/system && sudo nix-collect-garbage && sudo nixos-rebuild boot --flake /home/otakuracer/nixos-config/600g4#600g4-nixos";
+      hyprcon      = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
+      ai           = "aider --model ollama/qwen2.5-coder:7b --no-show-model-warnings";
+      ollama-start = "ollama serve > /dev/null 2>&1 &; disown";
+      ollama-stop  = "pkill ollama";
     };
   };
 
@@ -394,6 +510,20 @@
           end,
         },
 
+        -- Aider AI coding assistant
+        {
+          "joshuavial/aider.nvim",
+          config = function()
+            require("aider").setup({
+              auto_manage_context = false,
+              default_bindings    = false,
+            })
+            vim.keymap.set("n", "<leader>ao", ":AiderOpen --model ollama/qwen2.5-coder:7b --no-show-model-warnings<CR>", { desc = "Aider open" })
+            vim.keymap.set("n", "<leader>af", ":AiderAddCurrentFile<CR>", { desc = "Aider add file" })
+            vim.keymap.set("n", "<leader>ax", ":AiderDropCurrentFile<CR>", { desc = "Aider drop file" })
+          end,
+        },
+
       }) -- end lazy.setup
 
     '';
@@ -608,6 +738,13 @@
     };
   };
 
+  # XDG For winbox
+  xdg.desktopEntries.winbox = {
+    name = "WinBox";
+    exec = "env QT_QPA_PLATFORM=xcb WinBox";
+    terminal = false;
+  };
+
   # ── MIME: video → mpv / celluloid, images → imv, PDF → zathura ──────────────
   xdg.desktopEntries.nvim = {
     name = "Neovim";
@@ -714,6 +851,35 @@
     };
   };
 
+  # ── MPRIS media notifications ───────────────────────────────────────────────
+  home.file.".local/bin/mpris-notify.sh" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      playerctl --follow metadata --format '{{status}} {{title}} {{artist}}' | while read -r status title artist; do
+          if [ "$status" = "Playing" ]; then
+            makoctl dismiss --all
+            notify-send -t 3000 "󰎆 Now Playing" "$title - $artist"
+          fi
+        done
+    '';
+  };
+
+  systemd.user.services.mpris-notify = {
+    Unit = {
+      Description = "MPRIS media change notifications via mako";
+      After       = [ "graphical-session.target" ];
+      PartOf      = [ "graphical-session.target" ];
+    };
+    Service = {
+      ExecStart = "%h/.local/bin/mpris-notify.sh";
+      Restart   = "on-failure";
+    };
+    Install = {
+      WantedBy = [ "graphical-session.target" ];
+    };
+  };
+
   # ── Nemo dark mode via dconf ─────────────────────────────────────────────────
 
   # ── XDG User Directories ─────────────────────────────────────────────────────
@@ -730,6 +896,51 @@
     videos            = "${config.home.homeDirectory}/Videos";
   };
 
+  # ── Mako (notifications) ─────────────────────────────────────────────────────
+  services.mako = {
+    enable = true;
+    extraConfig = ''
+      font=JetBrainsMono Nerd Font 12
+      background-color=#1a1b26ee
+      text-color=#c0caf5
+      border-color=#7aa2f7
+      border-size=1
+      border-radius=12
+      width=360
+      height=110
+      margin=12,12,0,0
+      padding=14,18
+      default-timeout=5000
+      max-icon-size=40
+      max-visible=5
+      layer=overlay
+      anchor=top-right
+      sort=-time
+      markup=1
+      actions=1
+
+      [urgency=low]
+      background-color=#16161eee
+      text-color=#565f89
+      border-color=#292e42
+      border-size=1
+      default-timeout=3000
+
+      [urgency=normal]
+      background-color=#1a1b26ee
+      text-color=#c0caf5
+      border-color=#7aa2f7
+      border-size=1
+      default-timeout=5000
+
+      [urgency=high]
+      background-color=#1a1b26ee
+      text-color=#f7768e
+      border-color=#f7768e
+      border-size=2
+      default-timeout=0
+    '';
+  };
   # ── Waybar ───────────────────────────────────────────────────────────────────
   programs.waybar = {
     enable = true;
@@ -745,7 +956,7 @@
 
         modules-left   = [ "hyprland/workspaces" "hyprland/window" ];
         modules-center = [ "clock" ];
-        modules-right  = [ "pulseaudio" "network" "cpu" "memory" "tray" ];
+        modules-right  = [ "pulseaudio" "network" "custom/netspeed" "cpu" "memory" "tray" ];
 
         "hyprland/workspaces" = {
           format      = "{icon}";
@@ -802,9 +1013,15 @@
           tooltip-format     = "{ipaddr} via {gwaddr}";
         };
 
+        "custom/netspeed" = {
+            exec     = "~/.config/waybar/scripts/netspeed.sh";
+            interval = 2;
+            format   = "{}";
+            tooltip  = false;
+        };
+
         tray = {
           spacing   = 8;
-          icon-size = 16;
         };
       };
     };
@@ -851,6 +1068,7 @@
       }
 
       #workspaces button {
+        font-size: 16px;
         padding: 2px 6px;
         color: @fg-dim;
         background: transparent;
@@ -939,6 +1157,198 @@
       }
     '';
   };
+
+  programs.cava = {
+    enable = true;
+    settings = {
+      general = {
+        bars        = 0;
+        framerate   = 60;
+        bar_width   = 2;
+        bar_spacing = 1;
+      };
+      output = {
+        method      = "noncurses";
+        channels    = "stereo";
+        bar_width   = 2;
+        bar_spacing = 1;
+        bit_format  = "24bit";
+      };
+      smoothing = {
+        noise_reduction = 77;
+      };
+      color = {
+        gradient         = 1;
+        gradient_count   = 3;
+        gradient_color_1 = "'#1a1b26'";
+        gradient_color_2 = "'#7aa2f7'";
+        gradient_color_3 = "'#bb9af7'";
+      };
+    };
+  };
+
+  programs.rofi = {
+    enable   = true;
+    package  = pkgs.rofi;
+    terminal = "${pkgs.alacritty}/bin/alacritty";
+    theme    = "waybar";
+    extraConfig = {
+      show-icons          = true;
+      icon-theme          = "Papirus-Dark";
+      drun-display-format = "{name}";
+      display-drun        = " Apps";
+    };
+  };
+
+  home.file.".config/rofi/waybar.rasi".text = ''
+    /**
+     * waybar.rasi — Tokyo Night floating pill theme
+     */
+
+    * {
+      bg:      #1a1b26;
+      bg-alt:  #16161e;
+      bg-hl:   #292e42;
+      fg:      #c0caf5;
+      fg-dim:  #565f89;
+      blue:    #7aa2f7;
+      cyan:    #7dcfff;
+      green:   #9ece6a;
+      yellow:  #e0af68;
+      orange:  #ff9e64;
+      red:     #f7768e;
+      magenta: #bb9af7;
+
+      background-color: transparent;
+      text-color:       @fg;
+      border:           0px;
+      margin:           0px;
+      padding:          0px;
+      spacing:          0px;
+    }
+
+    window {
+      background-color: @bg;
+      location:         center;
+      anchor:           center;
+      width:            600px;
+      border-radius:    12px;
+      border:           1px;
+      border-color:     @bg-hl;
+    }
+
+    mainbox {
+      background-color: transparent;
+      padding:          8px;
+      spacing:          6px;
+    }
+
+    inputbar {
+      background-color: @bg-alt;
+      border-radius:    8px;
+      border:           1px;
+      border-color:     @bg-hl;
+      padding:          6px 12px;
+      spacing:          8px;
+      children:         [ prompt, entry ];
+    }
+
+    prompt {
+      background-color: transparent;
+      text-color:       @magenta;
+      font:             "JetBrains Mono Nerd Font Bold 13";
+      vertical-align:   0.5;
+    }
+
+    entry {
+      background-color:  transparent;
+      text-color:        @fg;
+      font:              "JetBrains Mono Nerd Font 13";
+      placeholder:       "Search…";
+      placeholder-color: @fg-dim;
+      vertical-align:    0.5;
+      cursor:            text;
+    }
+
+    listview {
+      background-color: transparent;
+      padding:          4px 0px;
+      spacing:          2px;
+      lines:            10;
+      columns:          1;
+      scrollbar:        false;
+      fixed-height:     false;
+    }
+
+    element {
+      background-color: transparent;
+      border-radius:    8px;
+      padding:          6px 10px;
+      spacing:          10px;
+      orientation:      horizontal;
+    }
+
+    element normal.normal {
+      background-color: transparent;
+      text-color:       @fg-dim;
+    }
+
+    element selected.normal {
+      background-color: @bg-hl;
+      text-color:       @blue;
+    }
+
+    element alternate.normal {
+      background-color: transparent;
+      text-color:       @fg-dim;
+    }
+
+    element normal.urgent,
+    element alternate.urgent {
+      text-color: @red;
+    }
+
+    element selected.urgent {
+      background-color: @bg-hl;
+      text-color:       @red;
+    }
+
+    element normal.active,
+    element alternate.active {
+      text-color: @green;
+    }
+
+    element selected.active {
+      background-color: @bg-hl;
+      text-color:       @green;
+    }
+
+    element-icon {
+      background-color: transparent;
+      size:             20px;
+      vertical-align:   0.5;
+    }
+
+    element-text {
+      background-color: transparent;
+      font:             "JetBrains Mono Nerd Font 13";
+      vertical-align:   0.5;
+      highlight:        bold #7aa2f7;
+    }
+
+    message {
+      background-color: @bg-alt;
+      border-radius:    8px;
+      padding:          6px 12px;
+      margin:           2px 0px;
+    }
+
+    textbox {
+      background-color: transparent;
+      text-color:       @fg-dim;
+      font:             "JetBrains Mono Nerd Font 13";
+    }
+  '';
 
   programs.home-manager.enable = true;
 }

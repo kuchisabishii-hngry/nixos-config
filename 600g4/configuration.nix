@@ -66,6 +66,7 @@
   };
   services.blueman.enable = true;
 
+
   # ── Audio (PipeWire) ─────────────────────────────────────────────────────────
   services.pipewire = {
     enable = true;
@@ -147,6 +148,9 @@
 
   # ── System Packages ──────────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
+    # AI
+    ollama-cpu
+
     # Terminal
     alacritty
     fish
@@ -211,7 +215,6 @@
     imagemagick
     jq
     ripgrep
-    superfile
     unar
     zoxide
 
@@ -220,29 +223,42 @@
     celluloid
 
     # Apps
+    appimage-run
     btop
+    deadbeef-with-plugins
+    fastfetch
     floorp-bin
     git
     glib
     gsettings-desktop-schemas
     onlyoffice-desktopeditors
+    parabolic
     pavucontrol
     spotify
+    sptlrx
     telegram-desktop
     uwsm
     wget
     winbox4
     xdg-utils
+    yt-dlp
+
+    # Screen recorder
+    (pkgs.wrapOBS {
+      plugins = with pkgs.obs-studio-plugins; [
+        wlrobs
+        obs-pipewire-audio-capture
+      ];
+    })
 
     # hyprland utilities
-    hyprlock
-    swww
     hypridle
+    hyprlock
     hyprshot
-    mako
-    rofi
     libappindicator-gtk3
     libdbusmenu-gtk3
+    swww
+    xdg-desktop-portal-hyprland
   ];
 
   # ── Fonts ────────────────────────────────────────────────────────────────────
