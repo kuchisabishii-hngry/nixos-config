@@ -59,6 +59,12 @@
     ];
   };
 
+  # ── Tailscale (VPN) ─────────────────────────────────────────────
+  services.tailscale = {
+      enable = true;
+      extraUpFlags = [ "--accept-routes" ];
+  };
+
   # ── Bluetooth (Intel 9560 combo) ─────────────────────────────────────────────
   hardware.bluetooth = {
     enable = true;
@@ -242,6 +248,8 @@
     winbox4
     xdg-utils
     yt-dlp
+    gparted
+    android-tools
 
     # Screen recorder
     (pkgs.wrapOBS {
