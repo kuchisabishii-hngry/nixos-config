@@ -11,6 +11,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # ── matugen ───────────────────────────────────────────────────────────
+    matugen = {
+        url = "github:InioX/matugen";
+        inputs.nixpkgs.follows = "nixpkgs";  # avoid duplicate nixpkgs
+    };
   };
 
   outputs = { self, nixpkgs, home-manager, ... } @ inputs:

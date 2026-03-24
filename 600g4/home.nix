@@ -814,6 +814,10 @@
     gtk4.extraConfig = {
       gtk-application-prefer-dark-theme = true;
     };
+    gtk4.theme = {
+      name    = "Tokyonight-Dark";
+      package = pkgs.tokyonight-gtk-theme;
+    };
   };
 
   home.pointerCursor = {
@@ -884,8 +888,9 @@
 
   # ── XDG User Directories ─────────────────────────────────────────────────────
   xdg.userDirs = {
-    enable            = true;
-    createDirectories = true;
+    enable              = true;
+    createDirectories   = true;
+    setSessionVariables = true;  # Silence HM 26.05 migration warning
     desktop           = "${config.home.homeDirectory}/Desktop";
     documents         = "${config.home.homeDirectory}/Documents";
     download          = "${config.home.homeDirectory}/Downloads";
