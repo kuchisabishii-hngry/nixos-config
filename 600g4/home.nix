@@ -13,7 +13,9 @@
     libnotify   # notify-send (used by osd-notify.sh)
     python3     # used by osd-notify.sh to parse hyprctl JSON
     playerctl   # MPRIS media control + used by mpris-notify service
-    aider-chat
+    #(aider-chat.overrideAttrs (_: { doCheck = false; }))
+    cmatrix
+    kdePackages.kdeconnect-kde
   ];
 
   # ── OSD notification script ───────────────────────────────────────────────────
@@ -109,6 +111,7 @@
   home.file.".config/uwsm/env".text = ''
     export GDK_BACKEND=wayland,x11,*
     export HYPRCURSOR_SIZE=24
+    export KDECONNECT_DISABLE_PORTAL=1
     export MOZ_ENABLE_WAYLAND=1
     export QT_AUTO_SCREEN_SCALE_FACTOR=1
     export QT_QPA_PLATFORM=wayland;xcb
@@ -164,23 +167,24 @@
       fastfetch
     '';
     shellAliases = {
-      v         = "nvim";
-      svim      = "sudo -E nvim";
-      ls        = "ls --color=auto";
-      ll        = "ls -lah --color=auto";
-      ".."      = "cd ..";
-      "..."     = "cd ../..";
-      rebuild   = "sudo nixos-rebuild switch --flake /home/otakuracer/nixos-config/600g4#600g4-nixos";
-      conf      = "nvim /home/otakuracer/nixos-config/600g4/configuration.nix";
-      hm        = "nvim /home/otakuracer/nixos-config/600g4/home.nix";
-      flk       = "nvim /home/otakuracer/nixos-config/600g4/flake.nix";
-      nix-gc    = "sudo nix-collect-garbage -d";
-      nix-list  = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
-      last3     = "sudo nix-env --delete-generations +3 --profile /nix/var/nix/profiles/system && sudo nix-collect-garbage && sudo nixos-rebuild boot --flake /home/otakuracer/nixos-config/600g4#600g4-nixos";
-      hyprcon      = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
-      ai           = "aider --model ollama/qwen2.5-coder:7b --no-show-model-warnings";
-      ollama-start = "ollama serve > /dev/null 2>&1 &; disown";
-      ollama-stop  = "pkill ollama";
+      v             = "nvim";
+      svim          = "sudo -E nvim";
+      ls            = "ls --color=auto";
+      ll            = "ls -lah --color=auto";
+      ".."          = "cd ..";
+      "..."         = "cd ../..";
+      rebuild       = "sudo nixos-rebuild switch --flake /home/otakuracer/nixos-config/600g4#600g4-nixos";
+      conf          = "nvim /home/otakuracer/nixos-config/600g4/configuration.nix";
+      hm            = "nvim /home/otakuracer/nixos-config/600g4/home.nix";
+      flk           = "nvim /home/otakuracer/nixos-config/600g4/flake.nix";
+      nix-gc        = "sudo nix-collect-garbage -d";
+      nix-list      = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
+      last3         = "sudo nix-env --delete-generations +3 --profile /nix/var/nix/profiles/system && sudo nix-collect-garbage && sudo nixos-rebuild boot --flake /home/otakuracer/nixos-config/600g4#600g4-nixos";
+      hyprcon       = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
+      ai            = "aider --model ollama/qwen2.5-coder:7b --no-show-model-warnings";
+      matrix        = "cmatrix -s -b -C green";
+      ollama-start  = "ollama serve > /dev/null 2>&1 &; disown";
+      ollama-stop   = "pkill ollama";
     };
   };
 
@@ -194,7 +198,7 @@
     extraPackages = with pkgs; [
       nixd
       lua-language-server
-      nodePackages.bash-language-server
+      bash-language-server
       qt6.qtdeclarative   # qmlls
       ripgrep
       fd
@@ -1356,4 +1360,11 @@
   '';
 
   programs.home-manager.enable = true;
+
+  # KDE Connect DBus override — use CAP_NET_ADMIN wrapper
+  home.file.".local/share/dbus-1/services/org.kde.kdeconnect.service".text = ''
+    [D-BUS Service]
+    Name=org.kde.kdeconnect
+    Exec=/run/wrappers/bin/kdeconnectd
+  '';
 }

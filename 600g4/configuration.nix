@@ -31,6 +31,20 @@
   # ── Networking ───────────────────────────────────────────────────────────────
   networking.hostName = "600g4-nixos";
   networking.networkmanager.enable = true;
+  networking.firewall = {
+    enable = true;
+    allowedTCPPortRanges = [{ from = 1714; to = 1764; }];
+    allowedUDPPortRanges = [{ from = 1714; to = 1764; }];
+  };
+
+  # ── KDE Connect ──────────────────────────────────────────────────────────────
+  programs.kdeconnect.enable = true;
+  security.wrappers.kdeconnectd = {
+    owner        = "root";
+    group        = "root";
+    capabilities = "cap_net_admin+ep";
+    source       = "${pkgs.kdePackages.kdeconnect-kde}/bin/kdeconnectd";
+  };
 
   # ── Locale & Time ────────────────────────────────────────────────────────────
   time.timeZone = "Asia/Jakarta";
@@ -46,13 +60,14 @@
   };
 
   environment.sessionVariables = {
-    LIBVA_DRIVER_NAME                 = "iHD";
-    GTK_THEME                         = "Tokyonight-Dark";
-    GTK_APPLICATION_PREFER_DARK_THEME = "1";
-    QT_QPA_PLATFORMTHEME              = "qt6ct";
-    QT_AUTO_SCREEN_SCALE_FACTOR       = "1";
-    XCURSOR_THEME                     = "Adwaita";
-    XCURSOR_SIZE                      = "24";
+    LIBVA_DRIVER_NAME                   = "iHD";
+    ELECTRON_OZONE_PLATFORM_HINT        = "x11";
+    GTK_THEME                           = "Tokyonight-Dark";
+    GTK_APPLICATION_PREFER_DARK_THEME   = "1";
+    QT_QPA_PLATFORMTHEME                = "qt6ct";
+    QT_AUTO_SCREEN_SCALE_FACTOR         = "1";
+    XCURSOR_THEME                       = "Adwaita";
+    XCURSOR_SIZE                        = "24";
     XDG_DATA_DIRS = [
         "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}"
         "${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}"
@@ -130,6 +145,9 @@
   # ── Shell: fish ──────────────────────────────────────────────────────────────
   programs.fish.enable = true;
 
+  # ── FUSE fix (important for Ferdium/Electron apps)
+  programs.fuse.userAllowOther = true;
+
   # ── Users ────────────────────────────────────────────────────────────────────
   users.users.otakuracer = {
     isNormalUser = true;
@@ -155,7 +173,7 @@
   # ── System Packages ──────────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
     # AI
-    ollama-cpu
+    #ollama-cpu
 
     # Terminal
     alacritty
@@ -165,7 +183,7 @@
     neovim
     nixd
     lua-language-server
-    nodePackages.bash-language-server
+    bash-language-server
     qt6.qtdeclarative  # provides qmlls
 
     # Clipboard
@@ -229,27 +247,29 @@
     celluloid
 
     # Apps
+    #telegram-desktop
+    android-tools
     appimage-run
     btop
     deadbeef-with-plugins
     fastfetch
+    ferdium
     floorp-bin
     git
     glib
+    gparted
     gsettings-desktop-schemas
+    ntfs3g
     onlyoffice-desktopeditors
     parabolic
     pavucontrol
     spotify
     sptlrx
-    telegram-desktop
     uwsm
     wget
     winbox4
     xdg-utils
     yt-dlp
-    gparted
-    android-tools
 
     # Screen recorder
     (pkgs.wrapOBS {
@@ -265,7 +285,7 @@
     hyprshot
     libappindicator-gtk3
     libdbusmenu-gtk3
-    swww
+    awww
     xdg-desktop-portal-hyprland
   ];
 
@@ -324,5 +344,6 @@
 
   environment.pathsToLink = [ "/share/wayland-sessions" ];
 
+  # Override KDE Connect DBus service to use CAP_NET_ADMIN wrappers
   system.stateVersion = "25.11";
 }
