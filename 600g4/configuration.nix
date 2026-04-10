@@ -263,6 +263,7 @@
     onlyoffice-desktopeditors
     parabolic
     pavucontrol
+    stremio-linux-shell
     spotify
     sptlrx
     uwsm
