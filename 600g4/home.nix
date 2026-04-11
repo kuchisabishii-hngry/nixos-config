@@ -162,7 +162,7 @@
       set -gx EDITOR nvim
       set -gx VISUAL nvim
       set -gx TERMINAL alacritty
-      set -gx OLLAMA_API_BASE http://localhost:11434
+      #set -gx OLLAMA_API_BASE http://localhost:11434
       zoxide init fish | source
       fastfetch
     '';
@@ -181,10 +181,10 @@
       nix-list      = "sudo nix-env --list-generations --profile /nix/var/nix/profiles/system/";
       last3         = "sudo nix-env --delete-generations +3 --profile /nix/var/nix/profiles/system && sudo nix-collect-garbage && sudo nixos-rebuild boot --flake /home/otakuracer/nixos-config/600g4#600g4-nixos";
       hyprcon       = "nvim /home/otakuracer/.config/hypr/hyprland.conf";
-      ai            = "aider --model ollama/qwen2.5-coder:7b --no-show-model-warnings";
       matrix        = "cmatrix -s -b -C green";
-      ollama-start  = "ollama serve > /dev/null 2>&1 &; disown";
-      ollama-stop   = "pkill ollama";
+      #ai            = "aider --model ollama/qwen2.5-coder:7b --no-show-model-warnings";
+      #ollama-start  = "ollama serve > /dev/null 2>&1 &; disown";
+      #ollama-stop   = "pkill ollama";
     };
   };
 
@@ -194,6 +194,8 @@
     defaultEditor = true;
     viAlias = true;
     vimAlias = true;
+    withRuby = false;
+    withPython3 = false;
 
     extraPackages = with pkgs; [
       nixd

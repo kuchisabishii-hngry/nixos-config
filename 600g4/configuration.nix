@@ -253,6 +253,7 @@
     btop
     deadbeef-with-plugins
     fastfetch
+    feishin
     ferdium
     floorp-bin
     git
@@ -261,11 +262,11 @@
     gsettings-desktop-schemas
     ntfs3g
     onlyoffice-desktopeditors
-    parabolic
+    #parabolic
     pavucontrol
-    stremio-linux-shell
     spotify
     sptlrx
+    stremio-linux-shell
     uwsm
     wget
     winbox4
@@ -321,7 +322,33 @@
   # ── File Manager: Nemo ───────────────────────────────────────────────────────
   services.gvfs.enable = true;   # needed for trash, network mounts, MTP
 
-  programs.nix-ld.enable = true;
+  programs.nix-ld = {
+    enable = true;
+    libraries = with pkgs; [
+      stdenv.cc.cc.lib
+      zlib
+      glib
+      nss
+      nspr
+      dbus
+      atk
+      cups
+      libdrm
+      gtk3
+      pango
+      cairo
+      libX11
+      libXcomposite
+      libXdamage
+      libXext
+      libXfixes
+      libXrandr
+      libxcb
+      mesa
+      expat
+      alsa-lib
+    ];
+  };
 
   # ── Virtualisation: Virt-Manager + QEMU ─────────────────────────────────────
   virtualisation.libvirtd = {
