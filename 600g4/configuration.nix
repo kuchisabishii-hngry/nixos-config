@@ -32,11 +32,60 @@
   networking.hostName = "600g4-nixos";
   networking.networkmanager.enable = true;
   networking.firewall = {
-    enable = true;
-    allowedTCPPortRanges = [{ from = 1714; to = 1764; }];
-    allowedUDPPortRanges = [{ from = 1714; to = 1764; }];
-  };
+  enable = true;
+  allowedTCPPorts = [ 8007 ];
+  allowedTCPPortRanges = [{ from = 1714; to = 1764; }];
+  allowedUDPPortRanges = [{ from = 1714; to = 1764; }];
+  # Remove the extraCommands that reference LIBVIRT_FWI
+  # (it won't exist yet at boot)
+};
 
+boot.kernel.sysctl."net.ipv4.ip_forward" = 1;
+
+# Ensure firewall waits for libvirtd
+systemd.services.firewall.after = lib.mkForce [
+  "systemd-modules-load.service"
+  "libvirtd.service"
+];
+
+# Add a dedicated service to manage the libvirt NAT rule
+  systemd.services.libvirt-nat-rule = {
+  description = "Libvirt NAT rule for port 8007 forwarding";
+  after = [ "libvirtd.service" ];
+  requires = [ "libvirtd.service" ];
+  wantedBy = [ "multi-user.target" ];
+  
+  serviceConfig = {
+    Type = "oneshot";
+    RemainAfterExit = true;
+  };
+  
+  script = ''
+    # Wait for LIBVIRT_FWI chain to exist (libvirtd creates it)
+    for i in {1..30}; do
+      if ${pkgs.iptables}/bin/iptables -L LIBVIRT_FWI -n 2>/dev/null | grep -q LIBVIRT_FWI; then
+        break
+      fi
+      sleep 0.1
+    done
+
+    # NAT rules
+    ${pkgs.iptables}/bin/iptables -t nat -A PREROUTING -i eno1 -p tcp --dport 8007 -j DNAT --to-destination 192.168.122.50:8007
+    ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -d 192.168.122.50 -p tcp --dport 8007 -j MASQUERADE
+    ${pkgs.iptables}/bin/iptables -A FORWARD -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT
+    
+    # Check before adding to LIBVIRT_FWI to avoid duplicates
+    ${pkgs.iptables}/bin/iptables -C LIBVIRT_FWI -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT 2>/dev/null || \
+      ${pkgs.iptables}/bin/iptables -I LIBVIRT_FWI 2 -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT
+  '';
+  
+  preStop = ''
+    ${pkgs.iptables}/bin/iptables -t nat -D PREROUTING -i eno1 -p tcp --dport 8007 -j DNAT --to-destination 192.168.122.50:8007 2>/dev/null || true
+    ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -d 192.168.122.50 -p tcp --dport 8007 -j MASQUERADE 2>/dev/null || true
+    ${pkgs.iptables}/bin/iptables -D FORWARD -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT 2>/dev/null || true
+    ${pkgs.iptables}/bin/iptables -D LIBVIRT_FWI -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT 2>/dev/null || true
+  '';
+};
   # ── KDE Connect ──────────────────────────────────────────────────────────────
   programs.kdeconnect.enable = true;
   security.wrappers.kdeconnectd = {
@@ -83,9 +132,16 @@
   # ── Bluetooth (Intel 9560 combo) ─────────────────────────────────────────────
   hardware.bluetooth = {
     enable = true;
-    powerOnBoot = true;
+    settings = {
+        General = {
+            Experimental = true;
+        };
+    };
   };
   services.blueman.enable = true;
+  hardware.enableRedistributableFirmware = true;
+  services.dbus.enable = true;
+  security.polkit.enable = true;
 
 
   # ── Audio (PipeWire) ─────────────────────────────────────────────────────────
@@ -250,24 +306,38 @@
     #telegram-desktop
     android-tools
     appimage-run
+    bitwarden-desktop
     btop
     deadbeef-with-plugins
+    dosfstools
+    exfat
+    exfatprogs
     fastfetch
     feishin
     ferdium
     floorp-bin
     git
     glib
+    google-chrome
     gparted
     gsettings-desktop-schemas
+    handbrake
+    inkscape
+    parted
+    jellyfin-desktop
     ntfs3g
+    ntfsprogs
     onlyoffice-desktopeditors
-    #parabolic
     pavucontrol
+    popsicle
+    ppsspp-sdl-wayland
     spotify
     sptlrx
     stremio-linux-shell
+    usbutils
+    pciutils
     uwsm
+    vscode
     wget
     winbox4
     xdg-utils
@@ -325,28 +395,32 @@
   programs.nix-ld = {
     enable = true;
     libraries = with pkgs; [
-      stdenv.cc.cc.lib
-      zlib
-      glib
-      nss
-      nspr
-      dbus
-      atk
-      cups
-      libdrm
-      gtk3
-      pango
-      cairo
-      libX11
-      libXcomposite
-      libXdamage
-      libXext
-      libXfixes
-      libXrandr
-      libxcb
-      mesa
-      expat
-      alsa-lib
+        stdenv.cc.cc.lib
+        zlib
+        glib
+        nss
+        nspr
+        dbus
+        atk
+        at-spi2-atk
+        cups
+        libdrm
+        gtk3
+        pango
+        cairo
+        libx11
+        libxcomposite
+        libxdamage
+        libxext
+        libxfixes
+        libxrandr
+        libxcb
+        libxkbcommon
+        libgbm
+        mesa
+        expat
+        alsa-lib
+        libGL
     ];
   };
 
@@ -362,6 +436,8 @@
   };
 
   programs.virt-manager.enable = true;
+
+  nix.settings.substituters = [ "https://cache.nixos.org/" ];
 
   # SPICE guest tools — shared clipboard + display resize in VM
   services.spice-vdagentd.enable = true;
