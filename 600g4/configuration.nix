@@ -6,7 +6,12 @@
   ];
 
   # ── Nix Settings ────────────────────────────────────────────────────────────
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config = {
+  allowUnfree = true; # if you already have this
+  permittedInsecurePackages = [
+    "electron-39.8.10"
+  ];
+};
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
   # ── Bootloader ───────────────────────────────────────────────────────────────
@@ -16,6 +21,11 @@
     style.wallpapers = [];
   };
   boot.loader.efi.canTouchEfiVariables = true;
+
+  # configuration.nix or your hardware/zfs.nix module
+  boot.supportedFilesystems = [ "zfs" ];
+  boot.zfs.forceImportRoot = false;  # safer default
+  networking.hostId = "fe7ae823";    # required by ZFS — generate with: head -c 4 /dev/urandom | od -A none -t x4 | tr -d ' '
 
   # ── Kernel & ZRAM ────────────────────────────────────────────────────────────
   zramSwap = {
@@ -76,7 +86,7 @@ systemd.services.firewall.after = lib.mkForce [
     
     # Check before adding to LIBVIRT_FWI to avoid duplicates
     ${pkgs.iptables}/bin/iptables -C LIBVIRT_FWI -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT 2>/dev/null || \
-      ${pkgs.iptables}/bin/iptables -I LIBVIRT_FWI 2 -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT
+      ${pkgs.iptables}/bin/iptables -I LIBVIRT_FWI 1 -p tcp -d 192.168.122.50 --dport 8007 -j ACCEPT
   '';
   
   preStop = ''
@@ -310,6 +320,7 @@ systemd.services.firewall.after = lib.mkForce [
     btop
     deadbeef-with-plugins
     dosfstools
+    dupeguru
     exfat
     exfatprogs
     fastfetch
@@ -323,19 +334,20 @@ systemd.services.firewall.after = lib.mkForce [
     gsettings-desktop-schemas
     handbrake
     inkscape
-    parted
     jellyfin-desktop
+    localsend
     ntfs3g
     ntfsprogs
     onlyoffice-desktopeditors
+    parted
     pavucontrol
+    pciutils
     popsicle
     ppsspp-sdl-wayland
     spotify
     sptlrx
     stremio-linux-shell
     usbutils
-    pciutils
     uwsm
     vscode
     wget

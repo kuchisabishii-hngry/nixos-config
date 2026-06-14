@@ -5,7 +5,7 @@
   home.username = "otakuracer";
   home.homeDirectory = "/home/otakuracer";
   home.stateVersion = "25.11";
-
+  home.enableNixpkgsReleaseCheck = false;
   home.sessionPath = [ "$HOME/.local/bin" ];
 
   # ── Packages ─────────────────────────────────────────────────────────────────
