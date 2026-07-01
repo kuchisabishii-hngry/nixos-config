@@ -333,15 +333,18 @@ systemd.services.firewall.after = lib.mkForce [
     gparted
     gsettings-desktop-schemas
     handbrake
+    immich-go
     inkscape
     jellyfin-desktop
     localsend
     ntfs3g
     ntfsprogs
     onlyoffice-desktopeditors
+    picard
     parted
     pavucontrol
     pciutils
+    rustdesk
     popsicle
     ppsspp-sdl-wayland
     spotify
