@@ -315,6 +315,8 @@ systemd.services.firewall.after = lib.mkForce [
     # Apps
     #telegram-desktop
     android-tools
+    ani-cli
+    aria2
     appimage-run
     bitwarden-desktop
     btop
@@ -326,6 +328,7 @@ systemd.services.firewall.after = lib.mkForce [
     fastfetch
     feishin
     ferdium
+    ffmpeg
     floorp-bin
     git
     glib
@@ -340,6 +343,7 @@ systemd.services.firewall.after = lib.mkForce [
     ntfs3g
     ntfsprogs
     onlyoffice-desktopeditors
+    openssl_4_0
     picard
     parted
     pavucontrol
@@ -357,6 +361,9 @@ systemd.services.firewall.after = lib.mkForce [
     winbox4
     xdg-utils
     yt-dlp
+    fzf
+    jq
+    curl
 
     # Screen recorder
     (pkgs.wrapOBS {
